@@ -11,7 +11,7 @@ use quote::{format_ident, quote};
 use ungrammar::{Grammar, Rule};
 
 pub fn generate_ast(mode: Mode) -> Result<()> {
-	let grammar_src = include_str!("../../js.ungram");
+	let grammar_src = include_str!("../../../crates/rome-js-grammar/src/grammar.ungram");
 	let grammar: Grammar = grammar_src.parse().unwrap();
 	let ast = make_ast(&grammar);
 
@@ -20,12 +20,11 @@ pub fn generate_ast(mode: Mode) -> Result<()> {
 	update(ast_nodes_file.as_path(), &contents, mode)?;
 
 	let tokens_file = project_root().join(codegen::AST_TOKENS);
-	let contents = generate_tokens( &ast)?;
+	let contents = generate_tokens(&ast)?;
 	update(tokens_file.as_path(), &contents, mode)?;
 
-
 	let syntax_kinds_file = project_root().join(codegen::SYNTAX_KINDS);
-	let contents = generate_syntax_kinds( KINDS_SRC)?;
+	let contents = generate_syntax_kinds(KINDS_SRC)?;
 	update(syntax_kinds_file.as_path(), &contents, mode)?;
 
 	Ok(())
@@ -90,7 +89,7 @@ fn handle_rule(
 	rule: &Rule,
 	label: Option<&String>,
 	optional: bool,
-	has_many: bool
+	has_many: bool,
 ) -> () {
 	match rule {
 		Rule::Labeled { label, rule } => {
@@ -100,14 +99,21 @@ fn handle_rule(
 			let ty = grammar[*node].name.clone();
 			let name = label.cloned().unwrap_or_else(|| to_lower_snake_case(&ty));
 
-			let field = Field::Node { name, ty, optional, has_many };
+			let field = Field::Node {
+				name,
+				ty,
+				optional,
+				has_many,
+			};
 			fields.push(field);
 		}
 		Rule::Token(token) => {
-			let mut name = grammar[*token].name.clone();
+			let mut name = label
+				.cloned()
+				.unwrap_or_else(|| grammar[*token].name.clone());
 			if name != "int_number" && name != "string" {
 				if "[]{}()".contains(&name) {
-						name = format!("'{}'", name);
+					name = format!("'{}'", name);
 				}
 				let field = Field::Token(name);
 				fields.push(field);
@@ -185,7 +191,12 @@ fn generate_nodes(kinds: KindsSrc, ast: &AstSrc) -> Result<String> {
 						}
 					}
 				}
-				Field::Node { name, ty, optional, has_many } => {
+				Field::Node {
+					name,
+					ty,
+					optional,
+					has_many,
+				} => {
 					let ty = format_ident!("{}", &ty);
 					let method_name = field.method_name();
 					if *optional {
