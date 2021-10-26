@@ -268,6 +268,71 @@ impl JsWithStatement {
 	pub fn body(&self) -> Option<JsStatement> { support::child(&self.syntax) }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct JsExport {
+	pub(crate) syntax: SyntaxNode,
+}
+impl JsExport {
+	pub fn export_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![export]) }
+	pub fn declaration(&self) -> Option<JsExportDeclaration> { support::child(&self.syntax) }
+	pub fn semicolon_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T ! [;]) }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct JsExportDefault {
+	pub(crate) syntax: SyntaxNode,
+}
+impl JsExportDefault {
+	pub fn export_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![export]) }
+	pub fn default_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![default]) }
+	pub fn argument(&self) -> Option<JsExportDefaultArgument> { support::child(&self.syntax) }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct JsExportFrom {
+	pub(crate) syntax: SyntaxNode,
+}
+impl JsExportFrom {
+	pub fn export_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![export]) }
+	pub fn l_curly_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['{']) }
+	pub fn specifiers(&self) -> AstChildren<JsExportFromSpecifier> {
+		support::children(&self.syntax)
+	}
+	pub fn r_curly_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['}']) }
+	pub fn from_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![from]) }
+	pub fn module_specifier(&self) -> Option<JsStringLiteral> { support::child(&self.syntax) }
+	pub fn semicolon_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T ! [;]) }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct JsExportAllFrom {
+	pub(crate) syntax: SyntaxNode,
+}
+impl JsExportAllFrom {
+	pub fn export_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![export]) }
+	pub fn star_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T ! [*]) }
+	pub fn export_name(&self) -> Option<JsExportName> { support::child(&self.syntax) }
+	pub fn from_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![from]) }
+	pub fn source(&self) -> Option<JsStringLiteral> { support::child(&self.syntax) }
+	pub fn semicolon_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T ! [;]) }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct JsImport {
+	pub(crate) syntax: SyntaxNode,
+}
+impl JsImport {
+	pub fn import_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![import]) }
+	pub fn clause(&self) -> Option<JsImportClause> { support::child(&self.syntax) }
+	pub fn from_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![from]) }
+	pub fn module_specifier(&self) -> Option<JsStringLiteral> { support::child(&self.syntax) }
+	pub fn semicolon_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T ! [;]) }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct JsImportModule {
+	pub(crate) syntax: SyntaxNode,
+}
+impl JsImportModule {
+	pub fn import_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![import]) }
+	pub fn module_specifier(&self) -> Option<JsStringLiteral> { support::child(&self.syntax) }
+	pub fn semicolon_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T ! [;]) }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsContinueStatement {
 	pub(crate) syntax: SyntaxNode,
 }
@@ -389,7 +454,6 @@ impl JsCatchClause {
 	pub fn catch_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![catch]) }
 	pub fn declaration(&self) -> Option<JsCatchDeclaration> { support::child(&self.syntax) }
 	pub fn body(&self) -> Option<JsBlockStatement> { support::child(&self.syntax) }
-	pub fn finally_clause(&self) -> Option<JsFinallyClause> { support::child(&self.syntax) }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsFinallyClause {
@@ -398,6 +462,14 @@ pub struct JsFinallyClause {
 impl JsFinallyClause {
 	pub fn finally_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![finally]) }
 	pub fn body(&self) -> Option<JsBlockStatement> { support::child(&self.syntax) }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct JsCatchFinally {
+	pub(crate) syntax: SyntaxNode,
+}
+impl JsCatchFinally {
+	pub fn catch_clause(&self) -> Option<JsCatchClause> { support::child(&self.syntax) }
+	pub fn finally_clause(&self) -> Option<JsFinallyClause> { support::child(&self.syntax) }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsCatchDeclaration {
@@ -630,6 +702,16 @@ impl JsFunctionExpression {
 	pub fn id(&self) -> Option<JsBindingIdentifier> { support::child(&self.syntax) }
 	pub fn parameters(&self) -> Option<JsFormalParameters> { support::child(&self.syntax) }
 	pub fn body(&self) -> Option<JsFunctionBody> { support::child(&self.syntax) }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct JsImportCall {
+	pub(crate) syntax: SyntaxNode,
+}
+impl JsImportCall {
+	pub fn import_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![import]) }
+	pub fn l_paren_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['(']) }
+	pub fn argument(&self) -> Option<JsExpression> { support::child(&self.syntax) }
+	pub fn r_paren_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![')']) }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsLogicalExpression {
@@ -928,16 +1010,6 @@ impl JsPrivateClassMemberName {
 	pub fn id_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![id]) }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct JsSequenceElement {
-	pub(crate) syntax: SyntaxNode,
-}
-impl JsSequenceElement {
-	pub fn expression(&self) -> Option<JsExpression> { support::child(&self.syntax) }
-	pub fn trailing_comma_token(&self) -> Option<SyntaxToken> {
-		support::token(&self.syntax, T![trailing_comma])
-	}
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsStringTemplateElement {
 	pub(crate) syntax: SyntaxNode,
 }
@@ -960,7 +1032,7 @@ impl JsConstructorClassMember {
 	pub fn constructor_token(&self) -> Option<SyntaxToken> {
 		support::token(&self.syntax, T![constructor])
 	}
-	pub fn parameters(&self) -> Option<JsFormalParameter> { support::child(&self.syntax) }
+	pub fn parameters(&self) -> Option<JsFormalParameters> { support::child(&self.syntax) }
 	pub fn body(&self) -> Option<JsFunctionBody> { support::child(&self.syntax) }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -1116,6 +1188,84 @@ impl JsSpreadObjectMember {
 	}
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct JsExportFromSpecifier {
+	pub(crate) syntax: SyntaxNode,
+}
+impl JsExportFromSpecifier {
+	pub fn name(&self) -> Option<JsIdentifier> { support::child(&self.syntax) }
+	pub fn export_name(&self) -> Option<JsExportName> { support::child(&self.syntax) }
+	pub fn trailing_comma_token(&self) -> Option<SyntaxToken> {
+		support::token(&self.syntax, T![trailing_comma])
+	}
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct JsExportName {
+	pub(crate) syntax: SyntaxNode,
+}
+impl JsExportName {
+	pub fn as_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![as]) }
+	pub fn name(&self) -> Option<JsIdentifier> { support::child(&self.syntax) }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct JsExportDefaultExpressionArgument {
+	pub(crate) syntax: SyntaxNode,
+}
+impl JsExportDefaultExpressionArgument {
+	pub fn expression(&self) -> Option<JsExpression> { support::child(&self.syntax) }
+	pub fn semicolon_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T ! [;]) }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct JsImportDefaultBinding {
+	pub(crate) syntax: SyntaxNode,
+}
+impl JsImportDefaultBinding {
+	pub fn local_name(&self) -> Option<JsBindingIdentifier> { support::child(&self.syntax) }
+	pub fn trailing_comma_token(&self) -> Option<SyntaxToken> {
+		support::token(&self.syntax, T![trailing_comma])
+	}
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct JsNamespaceImportClause {
+	pub(crate) syntax: SyntaxNode,
+}
+impl JsNamespaceImportClause {
+	pub fn default_binding(&self) -> Option<JsImportDefaultBinding> { support::child(&self.syntax) }
+	pub fn star_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T ! [*]) }
+	pub fn as_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![as]) }
+	pub fn name(&self) -> Option<JsBindingIdentifier> { support::child(&self.syntax) }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct JsNamedImportClause {
+	pub(crate) syntax: SyntaxNode,
+}
+impl JsNamedImportClause {
+	pub fn default_binding(&self) -> Option<JsImportDefaultBinding> { support::child(&self.syntax) }
+	pub fn l_curly_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['{']) }
+	pub fn named_imports(&self) -> AstChildren<JsImportSpecifier> {
+		support::children(&self.syntax)
+	}
+	pub fn r_curly_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['}']) }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct JsImportSpecifier {
+	pub(crate) syntax: SyntaxNode,
+}
+impl JsImportSpecifier {
+	pub fn name(&self) -> Option<JsIdentifier> { support::child(&self.syntax) }
+	pub fn binding(&self) -> Option<JsImportBinding> { support::child(&self.syntax) }
+	pub fn trailing_comma_token(&self) -> Option<SyntaxToken> {
+		support::token(&self.syntax, T![trailing_comma])
+	}
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct JsImportBinding {
+	pub(crate) syntax: SyntaxNode,
+}
+impl JsImportBinding {
+	pub fn as_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![as]) }
+	pub fn name(&self) -> Option<JsBindingIdentifier> { support::child(&self.syntax) }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsArrayAssignmentPattern {
 	pub(crate) syntax: SyntaxNode,
 }
@@ -1180,6 +1330,12 @@ pub enum JsStatement {
 	JsVariableDeclarationStatement(JsVariableDeclarationStatement),
 	JsWhileStatement(JsWhileStatement),
 	JsWithStatement(JsWithStatement),
+	JsExport(JsExport),
+	JsExportDefault(JsExportDefault),
+	JsExportFrom(JsExportFrom),
+	JsExportAllFrom(JsExportAllFrom),
+	JsImport(JsImport),
+	JsImportModule(JsImportModule),
 	JsUnknownStatement(JsUnknownStatement),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -1199,6 +1355,7 @@ pub enum JsExpression {
 	JsConditionalExpression(JsConditionalExpression),
 	JsDoExpression(JsDoExpression),
 	JsFunctionExpression(JsFunctionExpression),
+	JsImportCall(JsImportCall),
 	JsLogicalExpression(JsLogicalExpression),
 	JsMemberExpression(JsMemberExpression),
 	JsNewExpression(JsNewExpression),
@@ -1236,6 +1393,7 @@ pub enum JsSwitchCase {
 pub enum JsTryHandler {
 	JsCatchClause(JsCatchClause),
 	JsFinallyClause(JsFinallyClause),
+	JsCatchFinally(JsCatchFinally),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum JsArrayElement {
@@ -1302,6 +1460,24 @@ pub enum JsStaticMemberKey {
 	JsIdentifier(JsIdentifier),
 	JsStringLiteral(JsStringLiteral),
 	JsNumberLiteral(JsNumberLiteral),
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum JsExportDeclaration {
+	JsFunctionDeclaration(JsFunctionDeclaration),
+	JsClassDeclaration(JsClassDeclaration),
+	JsVariableDeclarationStatement(JsVariableDeclarationStatement),
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum JsExportDefaultArgument {
+	JsClassDeclaration(JsClassDeclaration),
+	JsFunctionDeclaration(JsFunctionDeclaration),
+	JsExportDefaultExpressionArgument(JsExportDefaultExpressionArgument),
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum JsImportClause {
+	JsImportDefaultBinding(JsImportDefaultBinding),
+	JsNamespaceImportClause(JsNamespaceImportClause),
+	JsNamedImportClause(JsNamedImportClause),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum JsPatterns {
@@ -1606,6 +1782,72 @@ impl AstNode for JsWithStatement {
 	}
 	fn syntax(&self) -> &SyntaxNode { &self.syntax }
 }
+impl AstNode for JsExport {
+	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_EXPORT }
+	fn cast(syntax: SyntaxNode) -> Option<Self> {
+		if Self::can_cast(syntax.kind()) {
+			Some(Self { syntax })
+		} else {
+			None
+		}
+	}
+	fn syntax(&self) -> &SyntaxNode { &self.syntax }
+}
+impl AstNode for JsExportDefault {
+	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_EXPORT_DEFAULT }
+	fn cast(syntax: SyntaxNode) -> Option<Self> {
+		if Self::can_cast(syntax.kind()) {
+			Some(Self { syntax })
+		} else {
+			None
+		}
+	}
+	fn syntax(&self) -> &SyntaxNode { &self.syntax }
+}
+impl AstNode for JsExportFrom {
+	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_EXPORT_FROM }
+	fn cast(syntax: SyntaxNode) -> Option<Self> {
+		if Self::can_cast(syntax.kind()) {
+			Some(Self { syntax })
+		} else {
+			None
+		}
+	}
+	fn syntax(&self) -> &SyntaxNode { &self.syntax }
+}
+impl AstNode for JsExportAllFrom {
+	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_EXPORT_ALL_FROM }
+	fn cast(syntax: SyntaxNode) -> Option<Self> {
+		if Self::can_cast(syntax.kind()) {
+			Some(Self { syntax })
+		} else {
+			None
+		}
+	}
+	fn syntax(&self) -> &SyntaxNode { &self.syntax }
+}
+impl AstNode for JsImport {
+	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_IMPORT }
+	fn cast(syntax: SyntaxNode) -> Option<Self> {
+		if Self::can_cast(syntax.kind()) {
+			Some(Self { syntax })
+		} else {
+			None
+		}
+	}
+	fn syntax(&self) -> &SyntaxNode { &self.syntax }
+}
+impl AstNode for JsImportModule {
+	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_IMPORT_MODULE }
+	fn cast(syntax: SyntaxNode) -> Option<Self> {
+		if Self::can_cast(syntax.kind()) {
+			Some(Self { syntax })
+		} else {
+			None
+		}
+	}
+	fn syntax(&self) -> &SyntaxNode { &self.syntax }
+}
 impl AstNode for JsContinueStatement {
 	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_CONTINUE_STATEMENT }
 	fn cast(syntax: SyntaxNode) -> Option<Self> {
@@ -1749,6 +1991,17 @@ impl AstNode for JsFinallyClause {
 	}
 	fn syntax(&self) -> &SyntaxNode { &self.syntax }
 }
+impl AstNode for JsCatchFinally {
+	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_CATCH_FINALLY }
+	fn cast(syntax: SyntaxNode) -> Option<Self> {
+		if Self::can_cast(syntax.kind()) {
+			Some(Self { syntax })
+		} else {
+			None
+		}
+	}
+	fn syntax(&self) -> &SyntaxNode { &self.syntax }
+}
 impl AstNode for JsCatchDeclaration {
 	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_CATCH_DECLARATION }
 	fn cast(syntax: SyntaxNode) -> Option<Self> {
@@ -1872,6 +2125,17 @@ impl AstNode for JsDoExpression {
 }
 impl AstNode for JsFunctionExpression {
 	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_FUNCTION_EXPRESSION }
+	fn cast(syntax: SyntaxNode) -> Option<Self> {
+		if Self::can_cast(syntax.kind()) {
+			Some(Self { syntax })
+		} else {
+			None
+		}
+	}
+	fn syntax(&self) -> &SyntaxNode { &self.syntax }
+}
+impl AstNode for JsImportCall {
+	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_IMPORT_CALL }
 	fn cast(syntax: SyntaxNode) -> Option<Self> {
 		if Self::can_cast(syntax.kind()) {
 			Some(Self { syntax })
@@ -2211,17 +2475,6 @@ impl AstNode for JsPrivateClassMemberName {
 	}
 	fn syntax(&self) -> &SyntaxNode { &self.syntax }
 }
-impl AstNode for JsSequenceElement {
-	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_SEQUENCE_ELEMENT }
-	fn cast(syntax: SyntaxNode) -> Option<Self> {
-		if Self::can_cast(syntax.kind()) {
-			Some(Self { syntax })
-		} else {
-			None
-		}
-	}
-	fn syntax(&self) -> &SyntaxNode { &self.syntax }
-}
 impl AstNode for JsStringTemplateElement {
 	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_STRING_TEMPLATE_ELEMENT }
 	fn cast(syntax: SyntaxNode) -> Option<Self> {
@@ -2398,6 +2651,94 @@ impl AstNode for JsSpreadObjectMember {
 	}
 	fn syntax(&self) -> &SyntaxNode { &self.syntax }
 }
+impl AstNode for JsExportFromSpecifier {
+	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_EXPORT_FROM_SPECIFIER }
+	fn cast(syntax: SyntaxNode) -> Option<Self> {
+		if Self::can_cast(syntax.kind()) {
+			Some(Self { syntax })
+		} else {
+			None
+		}
+	}
+	fn syntax(&self) -> &SyntaxNode { &self.syntax }
+}
+impl AstNode for JsExportName {
+	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_EXPORT_NAME }
+	fn cast(syntax: SyntaxNode) -> Option<Self> {
+		if Self::can_cast(syntax.kind()) {
+			Some(Self { syntax })
+		} else {
+			None
+		}
+	}
+	fn syntax(&self) -> &SyntaxNode { &self.syntax }
+}
+impl AstNode for JsExportDefaultExpressionArgument {
+	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_EXPORT_DEFAULT_EXPRESSION_ARGUMENT }
+	fn cast(syntax: SyntaxNode) -> Option<Self> {
+		if Self::can_cast(syntax.kind()) {
+			Some(Self { syntax })
+		} else {
+			None
+		}
+	}
+	fn syntax(&self) -> &SyntaxNode { &self.syntax }
+}
+impl AstNode for JsImportDefaultBinding {
+	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_IMPORT_DEFAULT_BINDING }
+	fn cast(syntax: SyntaxNode) -> Option<Self> {
+		if Self::can_cast(syntax.kind()) {
+			Some(Self { syntax })
+		} else {
+			None
+		}
+	}
+	fn syntax(&self) -> &SyntaxNode { &self.syntax }
+}
+impl AstNode for JsNamespaceImportClause {
+	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_NAMESPACE_IMPORT_CLAUSE }
+	fn cast(syntax: SyntaxNode) -> Option<Self> {
+		if Self::can_cast(syntax.kind()) {
+			Some(Self { syntax })
+		} else {
+			None
+		}
+	}
+	fn syntax(&self) -> &SyntaxNode { &self.syntax }
+}
+impl AstNode for JsNamedImportClause {
+	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_NAMED_IMPORT_CLAUSE }
+	fn cast(syntax: SyntaxNode) -> Option<Self> {
+		if Self::can_cast(syntax.kind()) {
+			Some(Self { syntax })
+		} else {
+			None
+		}
+	}
+	fn syntax(&self) -> &SyntaxNode { &self.syntax }
+}
+impl AstNode for JsImportSpecifier {
+	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_IMPORT_SPECIFIER }
+	fn cast(syntax: SyntaxNode) -> Option<Self> {
+		if Self::can_cast(syntax.kind()) {
+			Some(Self { syntax })
+		} else {
+			None
+		}
+	}
+	fn syntax(&self) -> &SyntaxNode { &self.syntax }
+}
+impl AstNode for JsImportBinding {
+	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_IMPORT_BINDING }
+	fn cast(syntax: SyntaxNode) -> Option<Self> {
+		if Self::can_cast(syntax.kind()) {
+			Some(Self { syntax })
+		} else {
+			None
+		}
+	}
+	fn syntax(&self) -> &SyntaxNode { &self.syntax }
+}
 impl AstNode for JsArrayAssignmentPattern {
 	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_ARRAY_ASSIGNMENT_PATTERN }
 	fn cast(syntax: SyntaxNode) -> Option<Self> {
@@ -2509,6 +2850,24 @@ impl From<JsWhileStatement> for JsStatement {
 impl From<JsWithStatement> for JsStatement {
 	fn from(node: JsWithStatement) -> JsStatement { JsStatement::JsWithStatement(node) }
 }
+impl From<JsExport> for JsStatement {
+	fn from(node: JsExport) -> JsStatement { JsStatement::JsExport(node) }
+}
+impl From<JsExportDefault> for JsStatement {
+	fn from(node: JsExportDefault) -> JsStatement { JsStatement::JsExportDefault(node) }
+}
+impl From<JsExportFrom> for JsStatement {
+	fn from(node: JsExportFrom) -> JsStatement { JsStatement::JsExportFrom(node) }
+}
+impl From<JsExportAllFrom> for JsStatement {
+	fn from(node: JsExportAllFrom) -> JsStatement { JsStatement::JsExportAllFrom(node) }
+}
+impl From<JsImport> for JsStatement {
+	fn from(node: JsImport) -> JsStatement { JsStatement::JsImport(node) }
+}
+impl From<JsImportModule> for JsStatement {
+	fn from(node: JsImportModule) -> JsStatement { JsStatement::JsImportModule(node) }
+}
 impl From<JsUnknownStatement> for JsStatement {
 	fn from(node: JsUnknownStatement) -> JsStatement { JsStatement::JsUnknownStatement(node) }
 }
@@ -2534,6 +2893,9 @@ impl AstNode for JsStatement {
 				| JS_VARIABLE_DECLARATION_STATEMENT
 				| JS_WHILE_STATEMENT
 				| JS_WITH_STATEMENT
+				| JS_EXPORT | JS_EXPORT_DEFAULT
+				| JS_EXPORT_FROM | JS_EXPORT_ALL_FROM
+				| JS_IMPORT | JS_IMPORT_MODULE
 				| JS_UNKNOWN_STATEMENT
 		)
 	}
@@ -2567,6 +2929,12 @@ impl AstNode for JsStatement {
 			}
 			JS_WHILE_STATEMENT => JsStatement::JsWhileStatement(JsWhileStatement { syntax }),
 			JS_WITH_STATEMENT => JsStatement::JsWithStatement(JsWithStatement { syntax }),
+			JS_EXPORT => JsStatement::JsExport(JsExport { syntax }),
+			JS_EXPORT_DEFAULT => JsStatement::JsExportDefault(JsExportDefault { syntax }),
+			JS_EXPORT_FROM => JsStatement::JsExportFrom(JsExportFrom { syntax }),
+			JS_EXPORT_ALL_FROM => JsStatement::JsExportAllFrom(JsExportAllFrom { syntax }),
+			JS_IMPORT => JsStatement::JsImport(JsImport { syntax }),
+			JS_IMPORT_MODULE => JsStatement::JsImportModule(JsImportModule { syntax }),
 			JS_UNKNOWN_STATEMENT => JsStatement::JsUnknownStatement(JsUnknownStatement { syntax }),
 			_ => return None,
 		};
@@ -2592,6 +2960,12 @@ impl AstNode for JsStatement {
 			JsStatement::JsVariableDeclarationStatement(it) => &it.syntax,
 			JsStatement::JsWhileStatement(it) => &it.syntax,
 			JsStatement::JsWithStatement(it) => &it.syntax,
+			JsStatement::JsExport(it) => &it.syntax,
+			JsStatement::JsExportDefault(it) => &it.syntax,
+			JsStatement::JsExportFrom(it) => &it.syntax,
+			JsStatement::JsExportAllFrom(it) => &it.syntax,
+			JsStatement::JsImport(it) => &it.syntax,
+			JsStatement::JsImportModule(it) => &it.syntax,
 			JsStatement::JsUnknownStatement(it) => &it.syntax,
 		}
 	}
@@ -2654,6 +3028,9 @@ impl From<JsDoExpression> for JsExpression {
 }
 impl From<JsFunctionExpression> for JsExpression {
 	fn from(node: JsFunctionExpression) -> JsExpression { JsExpression::JsFunctionExpression(node) }
+}
+impl From<JsImportCall> for JsExpression {
+	fn from(node: JsImportCall) -> JsExpression { JsExpression::JsImportCall(node) }
 }
 impl From<JsLogicalExpression> for JsExpression {
 	fn from(node: JsLogicalExpression) -> JsExpression { JsExpression::JsLogicalExpression(node) }
@@ -2747,7 +3124,7 @@ impl AstNode for JsExpression {
 				| JS_CONDITIONAL_EXPRESSION
 				| JS_DO_EXPRESSION
 				| JS_FUNCTION_EXPRESSION
-				| JS_LOGICAL_EXPRESSION
+				| JS_IMPORT_CALL | JS_LOGICAL_EXPRESSION
 				| JS_MEMBER_EXPRESSION
 				| JS_NEW_EXPRESSION
 				| JS_OBJECT_EXPRESSION
@@ -2791,6 +3168,7 @@ impl AstNode for JsExpression {
 			JS_FUNCTION_EXPRESSION => {
 				JsExpression::JsFunctionExpression(JsFunctionExpression { syntax })
 			}
+			JS_IMPORT_CALL => JsExpression::JsImportCall(JsImportCall { syntax }),
 			JS_LOGICAL_EXPRESSION => {
 				JsExpression::JsLogicalExpression(JsLogicalExpression { syntax })
 			}
@@ -2849,6 +3227,7 @@ impl AstNode for JsExpression {
 			JsExpression::JsConditionalExpression(it) => &it.syntax,
 			JsExpression::JsDoExpression(it) => &it.syntax,
 			JsExpression::JsFunctionExpression(it) => &it.syntax,
+			JsExpression::JsImportCall(it) => &it.syntax,
 			JsExpression::JsLogicalExpression(it) => &it.syntax,
 			JsExpression::JsMemberExpression(it) => &it.syntax,
 			JsExpression::JsNewExpression(it) => &it.syntax,
@@ -2930,12 +3309,18 @@ impl From<JsCatchClause> for JsTryHandler {
 impl From<JsFinallyClause> for JsTryHandler {
 	fn from(node: JsFinallyClause) -> JsTryHandler { JsTryHandler::JsFinallyClause(node) }
 }
+impl From<JsCatchFinally> for JsTryHandler {
+	fn from(node: JsCatchFinally) -> JsTryHandler { JsTryHandler::JsCatchFinally(node) }
+}
 impl AstNode for JsTryHandler {
-	fn can_cast(kind: SyntaxKind) -> bool { matches!(kind, JS_CATCH_CLAUSE | JS_FINALLY_CLAUSE) }
+	fn can_cast(kind: SyntaxKind) -> bool {
+		matches!(kind, JS_CATCH_CLAUSE | JS_FINALLY_CLAUSE | JS_CATCH_FINALLY)
+	}
 	fn cast(syntax: SyntaxNode) -> Option<Self> {
 		let res = match syntax.kind() {
 			JS_CATCH_CLAUSE => JsTryHandler::JsCatchClause(JsCatchClause { syntax }),
 			JS_FINALLY_CLAUSE => JsTryHandler::JsFinallyClause(JsFinallyClause { syntax }),
+			JS_CATCH_FINALLY => JsTryHandler::JsCatchFinally(JsCatchFinally { syntax }),
 			_ => return None,
 		};
 		Some(res)
@@ -2944,6 +3329,7 @@ impl AstNode for JsTryHandler {
 		match self {
 			JsTryHandler::JsCatchClause(it) => &it.syntax,
 			JsTryHandler::JsFinallyClause(it) => &it.syntax,
+			JsTryHandler::JsCatchFinally(it) => &it.syntax,
 		}
 	}
 }
@@ -3369,6 +3755,145 @@ impl AstNode for JsStaticMemberKey {
 		}
 	}
 }
+impl From<JsFunctionDeclaration> for JsExportDeclaration {
+	fn from(node: JsFunctionDeclaration) -> JsExportDeclaration {
+		JsExportDeclaration::JsFunctionDeclaration(node)
+	}
+}
+impl From<JsClassDeclaration> for JsExportDeclaration {
+	fn from(node: JsClassDeclaration) -> JsExportDeclaration {
+		JsExportDeclaration::JsClassDeclaration(node)
+	}
+}
+impl From<JsVariableDeclarationStatement> for JsExportDeclaration {
+	fn from(node: JsVariableDeclarationStatement) -> JsExportDeclaration {
+		JsExportDeclaration::JsVariableDeclarationStatement(node)
+	}
+}
+impl AstNode for JsExportDeclaration {
+	fn can_cast(kind: SyntaxKind) -> bool {
+		matches!(
+			kind,
+			JS_FUNCTION_DECLARATION | JS_CLASS_DECLARATION | JS_VARIABLE_DECLARATION_STATEMENT
+		)
+	}
+	fn cast(syntax: SyntaxNode) -> Option<Self> {
+		let res = match syntax.kind() {
+			JS_FUNCTION_DECLARATION => {
+				JsExportDeclaration::JsFunctionDeclaration(JsFunctionDeclaration { syntax })
+			}
+			JS_CLASS_DECLARATION => {
+				JsExportDeclaration::JsClassDeclaration(JsClassDeclaration { syntax })
+			}
+			JS_VARIABLE_DECLARATION_STATEMENT => {
+				JsExportDeclaration::JsVariableDeclarationStatement(
+					JsVariableDeclarationStatement { syntax },
+				)
+			}
+			_ => return None,
+		};
+		Some(res)
+	}
+	fn syntax(&self) -> &SyntaxNode {
+		match self {
+			JsExportDeclaration::JsFunctionDeclaration(it) => &it.syntax,
+			JsExportDeclaration::JsClassDeclaration(it) => &it.syntax,
+			JsExportDeclaration::JsVariableDeclarationStatement(it) => &it.syntax,
+		}
+	}
+}
+impl From<JsClassDeclaration> for JsExportDefaultArgument {
+	fn from(node: JsClassDeclaration) -> JsExportDefaultArgument {
+		JsExportDefaultArgument::JsClassDeclaration(node)
+	}
+}
+impl From<JsFunctionDeclaration> for JsExportDefaultArgument {
+	fn from(node: JsFunctionDeclaration) -> JsExportDefaultArgument {
+		JsExportDefaultArgument::JsFunctionDeclaration(node)
+	}
+}
+impl From<JsExportDefaultExpressionArgument> for JsExportDefaultArgument {
+	fn from(node: JsExportDefaultExpressionArgument) -> JsExportDefaultArgument {
+		JsExportDefaultArgument::JsExportDefaultExpressionArgument(node)
+	}
+}
+impl AstNode for JsExportDefaultArgument {
+	fn can_cast(kind: SyntaxKind) -> bool {
+		matches!(
+			kind,
+			JS_CLASS_DECLARATION | JS_FUNCTION_DECLARATION | JS_EXPORT_DEFAULT_EXPRESSION_ARGUMENT
+		)
+	}
+	fn cast(syntax: SyntaxNode) -> Option<Self> {
+		let res = match syntax.kind() {
+			JS_CLASS_DECLARATION => {
+				JsExportDefaultArgument::JsClassDeclaration(JsClassDeclaration { syntax })
+			}
+			JS_FUNCTION_DECLARATION => {
+				JsExportDefaultArgument::JsFunctionDeclaration(JsFunctionDeclaration { syntax })
+			}
+			JS_EXPORT_DEFAULT_EXPRESSION_ARGUMENT => {
+				JsExportDefaultArgument::JsExportDefaultExpressionArgument(
+					JsExportDefaultExpressionArgument { syntax },
+				)
+			}
+			_ => return None,
+		};
+		Some(res)
+	}
+	fn syntax(&self) -> &SyntaxNode {
+		match self {
+			JsExportDefaultArgument::JsClassDeclaration(it) => &it.syntax,
+			JsExportDefaultArgument::JsFunctionDeclaration(it) => &it.syntax,
+			JsExportDefaultArgument::JsExportDefaultExpressionArgument(it) => &it.syntax,
+		}
+	}
+}
+impl From<JsImportDefaultBinding> for JsImportClause {
+	fn from(node: JsImportDefaultBinding) -> JsImportClause {
+		JsImportClause::JsImportDefaultBinding(node)
+	}
+}
+impl From<JsNamespaceImportClause> for JsImportClause {
+	fn from(node: JsNamespaceImportClause) -> JsImportClause {
+		JsImportClause::JsNamespaceImportClause(node)
+	}
+}
+impl From<JsNamedImportClause> for JsImportClause {
+	fn from(node: JsNamedImportClause) -> JsImportClause {
+		JsImportClause::JsNamedImportClause(node)
+	}
+}
+impl AstNode for JsImportClause {
+	fn can_cast(kind: SyntaxKind) -> bool {
+		matches!(
+			kind,
+			JS_IMPORT_DEFAULT_BINDING | JS_NAMESPACE_IMPORT_CLAUSE | JS_NAMED_IMPORT_CLAUSE
+		)
+	}
+	fn cast(syntax: SyntaxNode) -> Option<Self> {
+		let res = match syntax.kind() {
+			JS_IMPORT_DEFAULT_BINDING => {
+				JsImportClause::JsImportDefaultBinding(JsImportDefaultBinding { syntax })
+			}
+			JS_NAMESPACE_IMPORT_CLAUSE => {
+				JsImportClause::JsNamespaceImportClause(JsNamespaceImportClause { syntax })
+			}
+			JS_NAMED_IMPORT_CLAUSE => {
+				JsImportClause::JsNamedImportClause(JsNamedImportClause { syntax })
+			}
+			_ => return None,
+		};
+		Some(res)
+	}
+	fn syntax(&self) -> &SyntaxNode {
+		match self {
+			JsImportClause::JsImportDefaultBinding(it) => &it.syntax,
+			JsImportClause::JsNamespaceImportClause(it) => &it.syntax,
+			JsImportClause::JsNamedImportClause(it) => &it.syntax,
+		}
+	}
+}
 impl From<JsArrayAssignmentPattern> for JsPatterns {
 	fn from(node: JsArrayAssignmentPattern) -> JsPatterns {
 		JsPatterns::JsArrayAssignmentPattern(node)
@@ -3565,6 +4090,21 @@ impl std::fmt::Display for JsStaticMemberKey {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
 }
+impl std::fmt::Display for JsExportDeclaration {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		std::fmt::Display::fmt(self.syntax(), f)
+	}
+}
+impl std::fmt::Display for JsExportDefaultArgument {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		std::fmt::Display::fmt(self.syntax(), f)
+	}
+}
+impl std::fmt::Display for JsImportClause {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		std::fmt::Display::fmt(self.syntax(), f)
+	}
+}
 impl std::fmt::Display for JsPatterns {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		std::fmt::Display::fmt(self.syntax(), f)
@@ -3710,6 +4250,36 @@ impl std::fmt::Display for JsWithStatement {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
 }
+impl std::fmt::Display for JsExport {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		std::fmt::Display::fmt(self.syntax(), f)
+	}
+}
+impl std::fmt::Display for JsExportDefault {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		std::fmt::Display::fmt(self.syntax(), f)
+	}
+}
+impl std::fmt::Display for JsExportFrom {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		std::fmt::Display::fmt(self.syntax(), f)
+	}
+}
+impl std::fmt::Display for JsExportAllFrom {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		std::fmt::Display::fmt(self.syntax(), f)
+	}
+}
+impl std::fmt::Display for JsImport {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		std::fmt::Display::fmt(self.syntax(), f)
+	}
+}
+impl std::fmt::Display for JsImportModule {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		std::fmt::Display::fmt(self.syntax(), f)
+	}
+}
 impl std::fmt::Display for JsContinueStatement {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		std::fmt::Display::fmt(self.syntax(), f)
@@ -3775,6 +4345,11 @@ impl std::fmt::Display for JsFinallyClause {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
 }
+impl std::fmt::Display for JsCatchFinally {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		std::fmt::Display::fmt(self.syntax(), f)
+	}
+}
 impl std::fmt::Display for JsCatchDeclaration {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		std::fmt::Display::fmt(self.syntax(), f)
@@ -3831,6 +4406,11 @@ impl std::fmt::Display for JsDoExpression {
 	}
 }
 impl std::fmt::Display for JsFunctionExpression {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		std::fmt::Display::fmt(self.syntax(), f)
+	}
+}
+impl std::fmt::Display for JsImportCall {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
@@ -3985,11 +4565,6 @@ impl std::fmt::Display for JsPrivateClassMemberName {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
 }
-impl std::fmt::Display for JsSequenceElement {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		std::fmt::Display::fmt(self.syntax(), f)
-	}
-}
 impl std::fmt::Display for JsStringTemplateElement {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		std::fmt::Display::fmt(self.syntax(), f)
@@ -4066,6 +4641,46 @@ impl std::fmt::Display for JsPropertyObjectMember {
 	}
 }
 impl std::fmt::Display for JsSpreadObjectMember {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		std::fmt::Display::fmt(self.syntax(), f)
+	}
+}
+impl std::fmt::Display for JsExportFromSpecifier {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		std::fmt::Display::fmt(self.syntax(), f)
+	}
+}
+impl std::fmt::Display for JsExportName {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		std::fmt::Display::fmt(self.syntax(), f)
+	}
+}
+impl std::fmt::Display for JsExportDefaultExpressionArgument {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		std::fmt::Display::fmt(self.syntax(), f)
+	}
+}
+impl std::fmt::Display for JsImportDefaultBinding {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		std::fmt::Display::fmt(self.syntax(), f)
+	}
+}
+impl std::fmt::Display for JsNamespaceImportClause {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		std::fmt::Display::fmt(self.syntax(), f)
+	}
+}
+impl std::fmt::Display for JsNamedImportClause {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		std::fmt::Display::fmt(self.syntax(), f)
+	}
+}
+impl std::fmt::Display for JsImportSpecifier {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		std::fmt::Display::fmt(self.syntax(), f)
+	}
+}
+impl std::fmt::Display for JsImportBinding {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}

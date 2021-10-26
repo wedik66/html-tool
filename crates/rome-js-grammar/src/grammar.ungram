@@ -75,6 +75,12 @@ JsStatement = JsBlockStatement          // BlockStmt
     | JsVariableDeclarationStatement    // VarDecl
     | JsWhileStatement                  // WhileStmt
     | JsWithStatement                   // WithStmt
+    | JsExport                          // ExportDecl
+    | JsExportDefault                   // ExportDefaultDecl
+    | JsExportFrom                      // ExportNamed
+    | JsExportAllFrom                   // ExportWildcard
+    | JsImport                          // ??
+    | JsImportModule                    // ??
     | JsUnknownStatement
 
 JsBlockStatement = 
@@ -180,26 +186,33 @@ JsThrowStatement =
 
 // FIXME
 // Not sure what to do with this one! The problem is that either the catch or finally clause must be present.
-// Ideally, the return type would be `Result<CatchClause> | Option<CatchClause>`, but that obviously doesn't work (how should the compiler know). 
-// Options are:
-// - TryCatchStatement, TryFinallyStatement, and TryCatchFinallyStatement. Obviously, that's awkward to use. 
+// The advantages of the current solution is that you can match on `TryStatement`, `TryCatchClause` and `TryFinallyClause` and you get all nodes, `JsCatchFinally` is only an intermediate, there's no `Result<Option>`, and there are no free child slots because all nodes are mandatory.
+// The main downside is that the accessors on `JsCatchFinally` return `Result` even tough it's impossible that they'll ever return an error (the parser would crate a `JsCatchClause` or `JsFinallyClause` if only one is absent). There are other cases with the same problem, e.g. the `else` token of the `ElseClause` which is why I belive that's fine.
+//
+// Alternatives are (in order of personal preference, most preferred at the top):
+// - Add **`try_handlers: JsTryHandler+`** and add manual helpers that return the finally/catch clauses (return `Result<Option>`). No storage overhead, we get it for free if we add + support to ungrammar for variable declarations.  Inspirational for other languages that have multiple catch expressions (C#, Java, ...)
+// -"Linked" handlers. We can add manual `finally_clause()` and `catch_clause` helpers to `TryStatement` that return `Result<Option>` (wastes 1 slot for catches without finally). Guarnatees tree is correct, even after mutating. No `Result<Option>`
+//     ```
+//     JsTryStatement = 'try' JsBlockStatement try_handler: JsTryHandler
+//     JsTryHandler = JsCatchClause | JsFinallyClause
+//     JsCatchClause = 'catch' JsCatchDeclaration? JsBlockStatement finally_clause: JsFinallyClause
+//   ```
 // - create internal accessors and manually implement `catch_clause`, `finally_clause` that return `Result<Option>`. The main question here (to be consistent) is when we should return an error if both are missing
 //     - when accessing `catch` or `finally`
 //     - when accessing `finally`
-// - Something like as is currently in source
+// - TryCatchStatement, TryFinallyStatement, and TryCatchFinallyStatement. Obviously, that's awkward to use. 
 JsTryStatement = 
     'try' 
     block: JsBlockStatement
     try_handler: JsTryHandler
 
-JsTryHandler = JsCatchClause | JsFinallyClause
+JsTryHandler = JsCatchClause | JsFinallyClause | JsCatchFinally
 
 // Group catch parameters because '(', parameter, ')' are all either optional or mandatory depending if any of them are
 JsCatchClause = 
     'catch' 
     declaration: JsCatchDeclaration?
     body: JsBlockStatement
-    finally_clause: JsFinallyClause?
 
 // TODO fix parameter, requires patterns
 JsCatchDeclaration = 
@@ -208,6 +221,10 @@ JsCatchDeclaration =
 JsFinallyClause = 
     'finally'
     body: JsBlockStatement
+
+JsCatchFinally = 
+    catch_clause: JsCatchClause 
+    finally_clause: JsFinallyClause
 
 JsVariableDeclarationStatement = 
     declaration: JsVariableDeclaration ';'?
@@ -232,14 +249,10 @@ JsWithStatement =
 // --------------------- EXPRESSIONS ---------------------
 
 // enum Expr {
-//     NewTarget,
-//     ImportMeta,
-//     SuperCall,  // CallExpression
-//     ImportCall,
-//     PrivatePropAccess,
-//     TsNonNull,
-//     TsAssertion,
-//     TsConstAssertion
+//     NewTarget, // new.target not supported 
+//     ImportMeta, // import.meta not supported
+//     SuperCall,  -> CallExpression
+//     PrivatePropAccess, -> MemberExpression
 // }
                                         // RSLint Name
 JsExpression = JsArrayExpression        // ArrayExpr
@@ -252,6 +265,7 @@ JsExpression = JsArrayExpression        // ArrayExpr
     | JsConditionalExpression           // CondExpr
     | JsDoExpression
     | JsFunctionExpression              // FnExpr
+    | JsImportCall                      // ImportCall
     | JsLogicalExpression               // BinExp
     | JsMemberExpression                // DotExpr, BracketExpr
     | JsNewExpression                   // NewExpr
@@ -395,10 +409,6 @@ JsSequenceExpression =
     comma: ',' 
     second: JsExpression
 
-JsSequenceElement = 
-    expression: JsExpression
-    trailing_comma: ','?
-
 JsSuperExpression = 'super'
 
 // example`test`
@@ -501,7 +511,7 @@ JsClassMember =                      // RSLint
 // Explicit constructor required because TS constructor support additional visibility modifiers that methods don't. 
 JsConstructorClassMember = 
     'constructor' 
-    parameters: JsFormalParameter 
+    parameters: JsFormalParameters 
     body: JsFunctionBody
 
 JsClassMemberName = JsObjectMemberKey | JsPrivateClassMemberName
@@ -613,6 +623,95 @@ JsSpreadObjectMember =
 
 // --------------------- MODULES ---------------------
 
+JsExport = 
+    'export' declaration: JsExportDeclaration
+    ';'?
+
+JsExportDeclaration = JsFunctionDeclaration | JsClassDeclaration | JsVariableDeclarationStatement
+
+JsExportFrom =
+    'export'
+    '{'
+        specifiers: JsExportFromSpecifier*
+    '}'
+    'from'
+    module_specifier: JsStringLiteral
+    ';'?
+
+JsExportFromSpecifier = 
+    name: JsIdentifier 
+    export_name: JsExportName?
+    trailing_comma: ','?
+
+JsExportName = 
+    'as' name: JsIdentifier
+
+JsExportDefault = 
+    'export' 'default' argument: JsExportDefaultArgument
+
+JsExportDefaultArgument = JsClassDeclaration | JsFunctionDeclaration | JsExportDefaultExpressionArgument
+// TODO: Replace with expression statement? It has the same structure, it's just a different name. 
+// Spec doesn't allow arbitrary expressions
+JsExportDefaultExpressionArgument = expression: JsExpression ';'?
+
+JsExportAllFrom = 
+    'export' 
+    '*' export_name: JsExportName? 
+    'from' source: JsStringLiteral 
+    ';'?
+
+JsImportModule = 
+    'import'
+    module_specifier: JsStringLiteral
+    ';'?
+
+JsImport = 
+    'import' 
+    clause: JsImportClause
+    'from'
+    module_specifier: JsStringLiteral
+    ';'?
+
+// Needed to guarantee we only allow valid combinations which are
+// - default: import x from 'a'
+// - named: import { a } from 'a';
+// - namespace: import * from 'a';
+// - default + namespace: import x, * as a from 'a'
+// - default + named: import x, { a } from 'a'
+JsImportClause = JsImportDefaultBinding | JsNamespaceImportClause | JsNamedImportClause
+
+// Rome wrapps the local name in JSImportSpecifierLocal
+JsImportDefaultBinding = 
+    local_name: JsBindingIdentifier
+    // TODO, the comma is required if followed by a {} but otherwise forbidden
+    trailing_comma: ','?
+
+// Flatten the 'as' + name or use 'JsImportBinding'?
+JsNamespaceImportClause = 
+    default_binding: JsImportDefaultBinding?
+    '*'
+    'as'
+    name: JsBindingIdentifier
+
+JsNamedImportClause = 
+    default_binding: JsImportDefaultBinding?
+    '{'
+    named_imports: JsImportSpecifier*
+    '}'
+
+JsImportSpecifier = 
+    name: JsIdentifier
+    binding: JsImportBinding?
+    trailing_comma: ','?
+
+JsImportBinding = 
+    'as' name: JsBindingIdentifier
+
+JsImportCall = 
+    'import'
+    '('
+    argument: JsExpression
+    ')'
 
 // --------------------- PATTERNS ---------------------
 
