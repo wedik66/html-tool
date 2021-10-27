@@ -1,12 +1,12 @@
 // Rules
 // Create a node when:
 // - contains multiple children (not just a token)
-// - it is part of an union type over nodes  
+// - it is part of an union type over nodes
 // otherwise, create a token
 
 // Create a wrapper node when the optionality of two or more children depend on each other.
-// - For example, the 'else' token and the alternate branch must either be both present or absent. 
-//      -> Create an ElseClause wrapping the token and the alternate branch. 
+// - For example, the 'else' token and the alternate branch must either be both present or absent.
+//      -> Create an ElseClause wrapping the token and the alternate branch.
 // Create a wrapper node for lists of children that use a common separator, for example
 //   `ArrayElement = value: Expression, trailing_comma: ','`
 //   This to guarantee that all tokens can be accessed and that you have a single type of children nodes
@@ -14,18 +14,18 @@
 
 // Rules across all nodes
 // * Prefix with 'Js'
-// * Don't abbreviate names, Expr -> Expression, Stmt -> Statement, Decl -> Declaration, Fn -> Function... 
+// * Don't abbreviate names, Expr -> Expression, Stmt -> Statement, Decl -> Declaration, Fn -> Function...
 
 // Questions
 // - Should we prefix tokens like `;`, `if` that are simple character sequences -> NO? They all share the same semantics, even if they differ in casing (e.g. `true` vs `True` vs `TRUE`)
-// - Split different expressions: Unary/Binary/Update by operator. Roslyn has PreIncrementExpression, PreDecrementExpression, AddExpression, etc. Makes it easier to match for a specific node without having to match on the token as well. 
+// - Split different expressions: Unary/Binary/Update by operator. Roslyn has PreIncrementExpression, PreDecrementExpression, AddExpression, etc. Makes it easier to match for a specific node without having to match on the token as well.
 //                                but results in many more nodes. Main advantage if you want to query. Hey, I'm interested in all add expressions -> node.descendants::<BinaryAddExpression>() vs node.descendants::<BinaryExpression>().filter(|n| n.operator() == '++');
 // - Unify JsScript and JsModule? Or do we need it because we currently can't store any additional meta data on nodes. If we keep it, add a `JsRoot` that holds the shared fields?
 // - RSLint has a JsCondition='(' JsExpression ')' that is used in If/While/Do-While and Switch statements. Should we keep it? No -> Unnecessary nesting? Same for formal parameters
-// - Conformance of the AST: A few examples -> NO? 
-//   - if (test) var a = 10; is legit whereas if (test) let a = 10; isn't 
+// - Conformance of the AST: A few examples -> NO?
+//   - if (test) var a = 10; is legit whereas if (test) let a = 10; isn't
 //   - using import/export only allowed inside of a module
-//   - contextual keywords. E.g. await expression outside of async functions. 
+//   - contextual keywords. E.g. await expression outside of async functions.
 // - should the parser generate a JsNode and JsToken type that is a union over all nodes/tokens? -> Yes?
 // - when should the optional trailing comma be part of the element (e.g. array) or should the element have a value that's over a union type
 // - Decide on member/property naming. ClassMember, MemberExpression (but uses object and property)
@@ -37,18 +37,23 @@
 //      - Automatically strip 'Js' prefix from methods (so that we can remove many of the labels)
 //      - Support union types (e.g. don't generate multiple operator fields for the binary expression operators)
 //      - Generate different return types for mandatory/optional nodes
+//      - Inline use of unions inside another union and provide a `From<OtherUnion>` implementation.
 // - Commas are annoying. Not always allowed (e.g. setter param). Roslyn has SeparatedList. Unclear how this would work with missing separators (or can we assume the parser never inserts separators)? and from a typing
+//      Rust analyzer has a heuristic to match (T (',' T)* ','?) https://github.com/rust-analyzer/rust-analyzer/blob/dfa355b4313a7ea3eb5a262ee9f1da71f50884d5/crates/syntax/src/tests/sourcegen_ast.rs#L676
+//      Can we use this to implement our own `SeparatedList` that has different views (nodes() -> Iterable<T or Result<T>?>, separators() ->  Iterable<SyntaxToken>, elements() -> Iterable<Element> whith Element = struct { node: Result<T>, trailing_separator: Option<SyntaxToken> })
+//      How would this work with error handling? E.g. what if the node or the separator is missing? Not possible? because missing separator -> Only one element. Missing element -> Which is why it's a `Result`.
+//      Can also offer mutation APIs on top
 
 
-JsScript = 
+JsScript =
     interpreter: 'js_shebang'? // rslint: shebang
-    directives: 'js_directive'* // Or a directive node? 
+    directives: 'js_directive'* // Or a directive node?
     stmts: JsStatement* // Called items
 
-JsModule = 
+JsModule =
     interpreter: 'js_shebang'?
     directives: 'js_directive'*
-    stmts: JsStatement* 
+    stmts: JsStatement*
 
 // --------------------- Unknowns ---------------------
 // Hack to make ungrammar happy. Let's hope they never ban recursive types xD
@@ -70,7 +75,7 @@ JsStatement = JsBlockStatement          // BlockStmt
     | JsClassDeclaration                // ClassDecl
     | JsDebuggerStatement               // DebuggerStmt
     | JsEmptyStatement                  // EmptyStmt
-    | JsExpressionStatement             // ExprStmt 
+    | JsExpressionStatement             // ExprStmt
     | JsForStatement                    // ForStmt
     | JsForInStatement                  // ForInStmt
     | JsForOfStatement                  // ForOfStmt
@@ -91,88 +96,92 @@ JsStatement = JsBlockStatement          // BlockStmt
     | JsImportModule                    // ??
     | JsUnknownStatement
 
-JsBlockStatement = 
+JsBlockStatement =
     '{' stmts: JsStatement* '}'
 
-JsBreakStatement = 
-    'break' 
-    (label: 'js_identifier')? 
+JsBreakStatement =
+    'break'
+    (label: 'js_identifier')?
     ';'?
 
-JsContinueStatement = 
-    'continue' 
-    (label: 'js_identifier')? 
+JsContinueStatement =
+    'continue'
+    (label: 'js_identifier')?
     ';'?
 
-JsDebuggerStatement = 
+JsDebuggerStatement =
     'debugger' ';'?
 
 // RSLint uses Condition for: (test)
-JsDoWhileStatement = 
-    'do' body: JsStatement 
+JsDoWhileStatement =
+    'do' body: JsStatement
     'while' '(' test: JsExpression ')' ';'?
 
-JsEmptyStatement = 
+JsEmptyStatement =
     ';'
 
 JsExpressionStatement =
     expression: JsExpression ';'?
 
 // Difference to RSLint: no ForInit, ForTest and ForUpdate: RSLint needed the extra kinds so that it could keep the test/update apart
-JsForStatement = 
-    'for' '(' 
-    init: JsForInit? init_semicolon: ';' 
-    test: JsExpression? test_semicolon: ';' 
-    update: JsExpression? 
-    ')' 
+JsForStatement =
+    'for' '('
+    init: JsForInit? init_semicolon: ';'
+    test: JsExpression? test_semicolon: ';'
+    update: JsExpression?
+    ')'
     body: JsStatement
 
-JsForInit = JsExpression
-    | JsVariableDeclaration
+JsForInit = JsExpression | JsVariableDeclaration
 
-JsForInStatement = 
-    'for' '(' left: JsForLeft 'in' right: JsExpression ')' 
+JsForInStatement =
+    'for' '(' left: JsForLeft 'in' right: JsExpression ')'
     body: JsStatement
 
-// Separate `ForAwait?` 
-JsForOfStatement = 
-    'for' 'await'? 
-    '(' left: JsForLeft 'of' right: JsExpression ')' 
+// Separate `ForAwait?`
+JsForOfStatement =
+    'for' 'await'?
+    '('
+    left: JsForLeft
+    'of'
+    right: JsExpression
+    ')'
     body: JsStatement
 
 JsForLeft = JsVariableDeclaration |  JsAssignmentTarget
 
-JsFunctionDeclaration = 
-    'function' '*'? id: JsBindingIdentifier 
+JsFunctionDeclaration =
+    'function' '*'?
+    id: JsBindingIdentifier
     parameter_list: JsParameterList
     body: JsFunctionBody
 
-// Doesn't exist in Rome, rome uses the same type for block/function bodies. 
+// Doesn't exist in Rome, rome uses the same type for block/function bodies.
 // Reason for splitting: Directives can only exist in function bodies (anything introducing new scope)
-JsFunctionBody = 
-    '{' 
-    directives: 'directive'*  
-    body: JsStatement* 
+JsFunctionBody =
+    '{'
+    directives: 'directive'*
+    body: JsStatement*
     '}'
 
-JsIfStatement = 
-    'if' '(' test: JsExpression ')' 
-    consequence: JsStatement 
+JsIfStatement =
+    'if' '(' test: JsExpression ')'
+    consequence: JsStatement
     else_clause: JsElseClause?
 
-JsElseClause = 
+JsElseClause =
     'else'
     alternate: JsStatement
 
-JsLabeledStatement = 
-    label: 'js_identifier' ':' 
+JsLabeledStatement =
+    label: 'js_identifier' ':'
     body: JsStatement
 
-JsReturnStatement = 
+JsReturnStatement =
     'return' argument: JsExpression? ';'?
 
-JsSwitchStatement = 
-    'switch' '(' discriminant: JsExpression ')' 
+JsSwitchStatement =
+    'switch' '(' discriminant: JsExpression ')'
     cases: JsSwitchCase*
 
 // Introduce a case clause / default because the optionality of the tokens depend on which variant it is
@@ -180,60 +189,60 @@ JsSwitchCase = JsCaseClause | JsDefaultClause
 JsCaseClause = 'case' test: JsExpression ':'
 JsDefaultClause = 'default' ':'
 
-JsThrowStatement = 
+JsThrowStatement =
     'throw' argument: JsExpression ';'?
 
-JsTryStatement = 
-    'try' 
+JsTryStatement =
+    'try'
     block: JsBlockStatement
     catch_clause: JsCatchClause
 
-// Having a `JsTryStatement` and a `JsTryFinallyStatement` isn't ideal because passes must query both if they want to handle try statements. 
+// Having a `JsTryStatement` and a `JsTryFinallyStatement` isn't ideal because passes must query both if they want to handle try statements.
 // Alternatives are
 // - Keep single `JsTryStatement` type that contains a list of `try_handlers`+. less guarantess about the handlers
-// - Keep single `JsTryStatement` type but create a `TryHandler = CatchClause | FinallyClause | CatchFinallyClause` node so that users can match the whole try statement. 
-JsTryFinallyStatement = 
+// - Keep single `JsTryStatement` type but create a `TryHandler = CatchClause | FinallyClause | CatchFinallyClause` node so that users can match the whole try statement.
+JsTryFinallyStatement =
     'try'
     block: JsBlockStatement
     catch_clause: JsCatchClause?
     finally_clause: JsFinallyClause
 
 // Group catch parameters because '(', parameter, ')' are all either optional or mandatory depending if any of them are
-JsCatchClause = 
-    'catch' 
+JsCatchClause =
+    'catch'
     declaration: JsCatchDeclaration?
     body: JsBlockStatement
 
-JsCatchDeclaration = 
+JsCatchDeclaration =
     '(' binding: JsBinding ')'
 
-JsFinallyClause = 
+JsFinallyClause =
     'finally'
     body: JsBlockStatement
 
-JsVariableDeclarationStatement = 
+JsVariableDeclarationStatement =
     declaration: JsVariableDeclaration ';'?
 
 // TODO unable to type: at least one child. Add support for + (at least one) to ungrammar or split into declarator: JsVariableDeclarator, other_declarators: JsVariableDeclarator*
-JsVariableDeclaration = 
-    kind_token: ('var' | 'let' | 'const') 
+JsVariableDeclaration =
+    kind_token: ('var' | 'let' | 'const')
     declarators: JsVariableDeclarator*
 
-JsVariableDeclarator = 
+JsVariableDeclarator =
     id: JsBinding '=' init: JsExpression?
 
-JsWhileStatement = 
-    'while' '(' test: JsExpression ')' 
+JsWhileStatement =
+    'while' '(' test: JsExpression ')'
     body: JsStatement
 
-JsWithStatement = 
-    'with' '(' object: JsExpression ')' 
+JsWithStatement =
+    'with' '(' object: JsExpression ')'
     body: JsStatement
 
 // --------------------- EXPRESSIONS ---------------------
 
 // enum Expr {
-//     NewTarget, // new.target not supported 
+//     NewTarget, // new.target not supported
 //     ImportMeta, // import.meta not supported
 //     SuperCall,  -> CallExpression
 //     PrivatePropAccess, -> MemberExpression
@@ -270,164 +279,141 @@ JsExpression = JsArrayExpression        // ArrayExpr
     | JsNullLiteral                     // Literal
     | JsNumberLiteral                   // Literal
     | JsStringLiteral                   // Literal
-    | JsTemplateLiteral                 
+    | JsTemplateLiteral
     | JsUnknownExpression
 
-JsArrayExpression = 
-    '[' 
-    elements: AnyJsArrayElement* 
+JsArrayExpression =
+    '['
+    // Not 100% correct because array holes must have a trailing comma. But enforcing
+    // this would make it too awkward to use
+    elements: (JsArrayElement (',' JsArrayElement)* ','?)
     ']'
 
 // Doesn't exist in Rome classic nor RSLint. Required so that we can refer the ',' token
-AnyJsArrayElement = JsArraySpreadElement
-    | JsArrayElement 
-    | JsArrayHole
+JsArrayElement = JsSpread | JsExpression | JsArrayHole
 
-JsArraySpreadElement = 
-    '...' argument: JsExpression
-    trailing_comma: ','?
-
-JsArrayElement = 
-    expression: JsExpression 
-    trailing_comma: ','?
-
-JsArrayHole = comma: ','
-
-JsArrowFunctionExpression = 
-    'async'? 
-    parameters: JsArrowFunctionParameters 
-    '=>' 
-    body: JsStatementOrExpression 
+JsArrowFunctionExpression =
+    'async'?
+    parameters: JsArrowFunctionParameters
+    '=>'
+    body: JsStatementOrExpression
 
 JsArrowFunctionParameters = JsParameterList | JsParameter
 
-JsStatementOrExpression = JsStatement | JsExpression
-
-// Split out Compound assignment for the "updating" operators because the left must then be a JsSimpleAssignmentTarget???
-JsAssignmentExpression = 
+JsAssignmentExpression =
     left: JsAssignmentTarget
-    operator: ('=' | '+=' | '-=' | '*=' | '/=' | '%=' | '<<=' | '>>=' | '>>>=' | '|=' | '^=' | '&=' | '**=' | '&&=' | '||=' | '??=') 
+    operator: ('=' | '+=' | '-=' | '*=' | '/=' | '%=' | '<<=' | '>>=' | '>>>=' | '|=' | '^=' | '&=' | '**=' | '&&=' | '||=' | '??=')
     right: JsExpression
 
-JsAwaitExpression = 
+JsAwaitExpression =
     'await' argument: JsExpression
 
-JsBinaryExpression = 
-    left: JsExpression 
-    operator: ('==' | '!=' | '===' | '**' | '!==' | '<' | '<=' | '>' | '>=' | '<<' | '>>' | '>>>' | '+' | '-' | '*' | '/' | '%' | '|' | '^' | '&' | 'in' | 'instanceof') 
+// Split out Compound assignment for the "updating" operators because the left must then be a JsSimpleAssignmentTarget???
+JsBinaryExpression =
+    left: JsExpression
+    operator: ('==' | '!=' | '===' | '**' | '!==' | '<' | '<=' | '>' | '>=' | '<<' | '>>' | '>>>' | '+' | '-' | '*' | '/' | '%' | '|' | '^' | '&' | 'in' | 'instanceof')
     right: JsExpression
 
-// Rome classic adds super to calle but this isn't needed since super is an expression???
-JsCallExpression = 
-    callee: JsExpression 
-    '(' arguments: JsCallArgument* ')'
+// Rome classic adds super to callee but this isn't needed because Rome adds super to the expression union???
+JsCallExpression =
+    callee: JsExpression
+    argument_list: JsArgumentList
 
-JsCallArgument = 
-    value: JsExpressionOrSpread trailing_comma: ','?
-
-JsExpressionOrSpread = JsExpression | JsSpread
-
-JsConditionalExpression = 
-    test: JsExpression 
-    '?' 
-    consequent: JsExpression 
-    ':' 
+JsConditionalExpression =
+    test: JsExpression
+    '?'
+    consequent: JsExpression
+    ':'
     alternate: JsExpression
 
-JsDoExpression = 
+JsDoExpression =
     'do'
     body: JsBlockStatement
 
-JsFunctionExpression = 
-    'async'? 
-    'function' 
-    '*'? 
-    id: JsBindingIdentifier? 
+JsFunctionExpression =
+    'async'?
+    'function'
+    '*'?
+    id: JsBindingIdentifier?
     parameter_list: JsParameterList
     body: JsFunctionBody
 
-JsLogicalExpression = 
-    left: JsExpression 
-    operator: ('||' | '&&' | '??') 
+JsLogicalExpression =
+    left: JsExpression
+    operator: ('||' | '&&' | '??')
     right: JsExpression
 
-
 // Rome classic defines object as expr | super but super is already expression?
-JsMemberExpression = 
-    object: JsExpression 
+JsMemberExpression =
+    object: JsExpression
     member: JsMember
 
-JsMember = JsStaticMember | JsComputedMember 
+JsMember = JsStaticMember | JsComputedMember
 
 JsStaticMember = '.' name: JsStaticMemberName
 
-// We should implement helpers that convert the content to a valid key, e.g. the key 0x02 = '2' and not '0x02'
-JsStaticMemberName = JsIdentifier | JsStringLiteral | JsNumberLiteral
-
-JsComputedMember = '[' name: JsExpression ']'
-
-
-// Rome classic defines callee as expr | super but super is an expression? 
-JsNewExpression = 
-    'new' 
-    callee: JsExpression 
-    '(' arguments: JsCallArgument* ')'
+// Rome classic defines callee as expr | super but super is an expression?
+JsNewExpression =
+    'new'
+    callee: JsExpression
+    argument_list: JsArgumentList
 
 // TODO Better to have a OptionalExpression type to support arrays, members, calls, template literal, private identifier
-JsOptionalCallExpression = 
-    optional: '?.' 
-    '(' arguments: JsCallArgument* ')'
+JsOptionalCallExpression =
+    callee: JsExpression
+    optional: '?.'
+    argument_list: JsArgumentList
 
-JsParenthesizedExpression = 
+JsParenthesizedExpression =
     '(' expression: JsExpression ')'
 
-JsReferenceIdentifierExpression = 
+JsReferenceIdentifierExpression =
     name: 'js_identifier'
 
 // Even a + qualifier isn't sufficient. We have the following options to represent sequences in the AST:
-// - first, second, ...rest: 
+// - first, second, ...rest:
 // - specify that the parser never generates a sequence expression if there are less than 2 expressions. In that case, expressions* would be safe. `a,` would be parsed as unknown expression
 // - Model as `BinaryExpression` where `,` is the operator. Results in deeper trees but at least, can be modelled correctly. a, b, c -> seq(left: seq(a, b), c)
-JsSequenceExpression = 
-    left: JsExpression 
-    comma: ',' 
+JsSequenceExpression =
+    left: JsExpression
+    comma: ','
     second: JsExpression
 
 JsSuperExpression = 'super'
 
 // example`test`
-JsTaggedTemplateExpression = 
+JsTaggedTemplateExpression =
     tag: JsExpression
     literal: JsTemplateLiteral
 
 JsThisExpression = 'this'
 
-JsUnaryExpression = 
-    operator: ('-' | '+' | '!' | '~' | 'typeof' | 'void' | 'delete')? 
+JsUnaryExpression =
+    operator: ('-' | '+' | '!' | '~' | 'typeof' | 'void' | 'delete')?
     argument: JsExpression
 
 // Pre/Post are needed to make the `operator` accessor mandatory. The only alternative would be to
-// `JsUpdateExpression = **internal**_prefix: (...)? argument: JsExpression **internal**_postfix: (...)?` and then 
+// `JsUpdateExpression = **internal**_prefix: (...)? argument: JsExpression **internal**_postfix: (...)?` and then
 // define a public facing `operator` method that returns either one of them or missing if the operator isn't present at all
 // (which is unlikely, because the parser would then just parse the argument)
-JsPreUpdateExpression = 
-    operator: ('--' | '++') 
+JsPreUpdateExpression =
+    operator: ('--' | '++')
     operand: JsSimpleAssignmentTarget
 
-JsPostUpdateExpression = 
-    operand: JsSimpleAssignmentTarget 
+JsPostUpdateExpression =
+    operand: JsSimpleAssignmentTarget
     operator: ('--' | '++')
 
-JsYieldExpression = 
-    'yield' '*'? 
+JsYieldExpression =
+    'yield' '*'?
     argument: JsExpression?
 
 // --------------------- LITERALS ---------------------
 
-// RSLint uses a single literal node for all kinds. I believe having different nodes is beneficial because it allows us to 
+// RSLint uses a single literal node for all kinds. I believe having different nodes is beneficial because it allows us to
 // add helper methods on the corresponding `AstNode`s. For example, to get the representation of a number literal, testing
-// if a boolean is true, getting the unquoted string... 
-// All the literal could implement a `Literal` trait that provides access to the "raw" value 
+// if a boolean is true, getting the unquoted string...
+// All the literal could implement a `Literal` trait that provides access to the "raw" value
 
 // "abcd" | 'abcd'
 JsStringLiteral = value: 'js_string'
@@ -448,10 +434,10 @@ JsNullLiteral = value: 'null'
 
 // The contents of the template. This list must be alternating TemplateElements and Expressions, beginning and ending with TemplateElement.
 // Parser guarantees that this list is never empty, always contains at least on element
-// Rome uses two different lists: expressions and quasis 
-JsTemplateLiteral =  
-    left_tick: '`' 
-    elements: JsTemplateElement* 
+// Rome uses two different lists: expressions and quasis
+JsTemplateLiteral =
+    left_tick: '`'
+    elements: JsTemplateElement*
     right_tick: '`'
 
 JsTemplateElement = JsStringTemplateElement | JsExpression
@@ -462,24 +448,24 @@ JsStringTemplateElement = value: 'js_string_template_element'
 // --------------------- CLASSES ---------------------
 
 // RSLint: ClassDecl, has ClassBody type
-// Rome calls the "members" body. Introduce `ClassBody`? 
-JsClassDeclaration = 
-    'class' 
-    id: JsBindingIdentifier 
-    extends_clause: JsExtendsClause? 
+// Rome calls the "members" body. Introduce `ClassBody`?
+JsClassDeclaration =
+    'class'
+    id: JsBindingIdentifier
+    extends_clause: JsExtendsClause?
     '{' members: JsClassMember* '}'
 
-JsExtendsClause = 
-    'extends' 
+JsExtendsClause =
+    'extends'
     super_class: JsExpression
 
-JsClassExpression = 
-    'class' 
-    id: JsBindingIdentifier? 
-    extends_clause: JsExtendsClause? 
-    '{' members: JsClassMember* '}' 
+JsClassExpression =
+    'class'
+    id: JsBindingIdentifier?
+    extends_clause: JsExtendsClause?
+    '{' members: JsClassMember* '}'
 
-JsClassMember =                      // RSLint 
+JsClassMember =                      // RSLint
     JsConstructorClassMember         // Constructor
     | JsPropertyClassMember          // ClassProp
     | JsPrivatePropertyClassMember   // PrivateProp
@@ -490,118 +476,113 @@ JsClassMember =                      // RSLint
 
 // Main reason for splitting: Each of these have different requirements. For example, a setter without an argument is a syntax error but it's totally fine for a method
 // We need to encode this into the grammar to ensure accessing the values will yield an Error when apporpriate.
-// At the other hand, the fact that get doesn't accept a param means that we need to fallback to `UnknownMember` when someone creates a getter that accepts an argument. BUT, no one would ever visit the params of the getter and, therefore, are not aware of the syntax error.
+// At the other hand, the fact that get doesn't accept a param means that we need to fallback to `UnknownMember` when someone creates a getter that accepts an argument. Because, no one would ever visit the params of the getter and, therefore, are not aware of the syntax error.
 
-// Explicit constructor required because TS constructor support additional visibility modifiers that methods don't. 
-JsConstructorClassMember = 
-    'constructor' 
+JsConstructorClassMember =
+    'constructor'
     parameter_list: JsParameterList
     body: JsFunctionBody
 
-JsClassMemberName = JsObjectMemberKey | JsPrivateClassMemberName
+JsClassMemberName = JsObjectMemberName | JsPrivateClassMemberName
 
-JsPropertyClassMember = 
-    'static' 
-    key: JsClassMemberName 
+JsPropertyClassMember =
+    'static'
+    key: JsClassMemberName
     value: JsPropertyClassMemberInitializer? ';'
 
-JsPropertyClassMemberInitializer = 
+JsPropertyClassMemberInitializer =
     '=' expression: JsExpression
 
 // TODO share methods etc with objects?
-JsMethodClassMember = 
-    'static'? 
-    'async'? 
-    '*'? 
-    key: JsClassMemberName 
+JsMethodClassMember =
+    'static'?
+    'async'?
+    '*'?
+    key: JsClassMemberName
     parameter_list: JsParameterList
     body: JsFunctionBody
 
-JsGetterClassMember = 
-    'static'? 
-    'get' 
-    key: JsClassMemberName 
-    '(' ')'  
+JsGetterClassMember =
+    'static'?
+    'get'
+    key: JsClassMemberName
+    '(' ')'
     body: JsFunctionBody
 
-JsSetterClassMember = 
-    'static'? 
-    'set' 
-    key: JsClassMemberName 
-    '(' value: JsParameter ')' 
+JsSetterClassMember =
+    'static'?
+    'set'
+    key: JsClassMemberName
+    '(' value: JsParameter ')'
     body: JsFunctionBody
 
 JsPrivateClassMemberName = '#' id: 'js_identifier'
 
-JsPrivateMethodClassMember = 
-    'static'? 
-    'async'? 
-    '*'? 
-    key: JsPrivateClassMemberName 
+JsPrivateMethodClassMember =
+    'static'?
+    'async'?
+    '*'?
+    key: JsPrivateClassMemberName
     parameter_list: JsParameterList
     body: JsFunctionBody
 
-JsPrivatePropertyClassMember = 
-    'static' 
-    key: JsPrivateClassMemberName 
+JsPrivatePropertyClassMember =
+    'static'
+    key: JsPrivateClassMemberName
     value: JsPropertyClassMemberInitializer? ';'
 
 
 // --------------------- OBJECTS ---------------------
 
+// We should implement helpers that convert the content to a valid name, e.g. the name 0x02 = '2' and not '0x02'
+JsStaticMemberName = JsIdentifier | JsStringLiteral | JsNumberLiteral
+
+JsComputedMember = '[' name: JsExpression ']'
+
+JsObjectMemberName =  JsStaticMemberName | JsComputedMember
+
 // members = properties in Rome classic
-JsObjectExpression = 
-    '{' members: JsObjectMember* '}'
-
-
-
-// TODO inline union type or change generator to automatically unroll union types used in another union type, because having to match twice is rather annoying
-JsObjectMemberKey =  JsStaticMemberName | JsComputedMember
+JsObjectExpression =
+    '{'
+    members: (JsObjectMember (',' JsObjectMember)* ','?)
+    '}'
 
                                                 // RSLint
 JsObjectMember = JsMethodObjectMember           // Method, shared with class (allows static, object doesn't allow private names, trailing comma)
  | JsGetterObjectMember                         // Getter, shared with class
  | JsSetterObjectMember                         // Setter, shared with class
- | JsPropertyObjectMember                       // LiteralProp? 
- | JsSpreadObjectMember                         // SpreadProp (Rome: JsSpreadProperty)
+ | JsPropertyObjectMember                       // LiteralProp?
+ | JsSpread                                     // SpreadProp (Rome: JsSpreadProperty)
  | JsUnknownMember
 
-JsPropertyObjectMember = 
-    key: JsObjectMemberKey 
-    ':' 
-    value: JsExpression 
-    trailing_comma: ','
+JsPropertyObjectMember =
+    name: JsObjectMemberName
+    ':'
+    value: JsExpression
 
-JsMethodObjectMember = 
-    'async'? 
-    '*'? 
-    key: JsObjectMemberKey 
+JsMethodObjectMember =
+    'async'?
+    '*'?
+    name: JsObjectMemberName
     parameter_list: JsParameterList
-    body: JsFunctionBody 
-    trailing_comma: ','
-
-JsGetterObjectMember = 
-    'get' 
-    key: JsObjectMemberKey 
-    '(' ')' 
     body: JsFunctionBody
-    trailing_comma: ','
 
-JsSetterObjectMember = 
-    'set' 
-    key: JsObjectMemberKey 
-    '(' value: JsParameter ')' 
-    body: JsFunctionBody 
-    trailing_comma: ','
+JsGetterObjectMember =
+    'get'
+    name: JsObjectMemberName
+    '(' ')'
+    body: JsFunctionBody
 
-JsSpreadObjectMember = 
-    '...' argument: JsExpression 
-    trailing_comma: ','
+JsSetterObjectMember =
+    'set'
+    name: JsObjectMemberName
+    '(' value: JsParameter ')'
+    body: JsFunctionBody
 
 
 // --------------------- MODULES ---------------------
 
-JsExport = 
+JsExport =
     'export' declaration: JsExportDeclaration
     ';'?
 
@@ -610,41 +591,41 @@ JsExportDeclaration = JsFunctionDeclaration | JsClassDeclaration | JsVariableDec
 JsExportFrom =
     'export'
     '{'
-        specifiers: JsExportFromSpecifier*
+    specifiers: (JsExportFromSpecifier (',' JsExportFromSpecifier)* ','?)
     '}'
     'from'
     module_specifier: JsStringLiteral
     ';'?
 
-JsExportFromSpecifier = 
-    name: JsIdentifier 
+JsExportFromSpecifier =
+    name: JsIdentifier
     export_name: JsExportName?
-    trailing_comma: ','?
 
-JsExportName = 
+JsExportName =
     'as' name: JsIdentifier
 
-JsExportDefault = 
+JsExportDefault =
     'export' 'default' argument: JsExportDefaultArgument
 
 JsExportDefaultArgument = JsClassDeclaration | JsFunctionDeclaration | JsExportDefaultExpressionArgument
-// TODO: Replace with expression statement? It has the same structure, it's just a different name. 
-// Spec doesn't allow arbitrary expressions
+// You may be tempted to use `ExpressionStatement` here. Don't! the `DefaultExpressionArgument` would appear
+// wherever the user queries for all expression statements which isn't what we want.
 JsExportDefaultExpressionArgument = expression: JsExpression ';'?
 
-JsExportAllFrom = 
-    'export' 
-    '*' export_name: JsExportName? 
-    'from' source: JsStringLiteral 
+JsExportAllFrom =
+    'export'
+    '*'
+    export_name: JsExportName?
+    'from' source: JsStringLiteral
     ';'?
 
-JsImportModule = 
+JsImportModule =
     'import'
     module_specifier: JsStringLiteral
     ';'?
 
-JsImport = 
-    'import' 
+JsImport =
+    'import'
     clause: JsImportClause
     'from'
     module_specifier: JsStringLiteral
@@ -658,34 +639,34 @@ JsImport =
 // - default + named: import x, { a } from 'a'
 JsImportClause = JsImportDefaultBinding | JsNamespaceImportClause | JsNamedImportClause
 
-// Rome wrapps the local name in JSImportSpecifierLocal
-JsImportDefaultBinding = 
+// Rome wraps the local name in JSImportSpecifierLocal
+JsImportDefaultBinding =
     local_name: JsBindingIdentifier
-    // TODO, the comma is required if followed by a {} but otherwise forbidden
+    // The comma is required if followed by a {} but otherwise forbidden. Introducing another node just to
+    // enforce this in namspace import clause / named import clause feels overkill
     trailing_comma: ','?
 
 // Flatten the 'as' + name or use 'JsImportBinding'?
-JsNamespaceImportClause = 
+JsNamespaceImportClause =
     default_binding: JsImportDefaultBinding?
     '*'
     'as'
     name: JsBindingIdentifier
 
-JsNamedImportClause = 
+JsNamedImportClause =
     default_binding: JsImportDefaultBinding?
     '{'
-    named_imports: JsImportSpecifier*
+    named_imports: (JsImportSpecifier (',' JsImportSpecifier)* ','?)
     '}'
 
-JsImportSpecifier = 
+JsImportSpecifier =
     name: JsIdentifier
     binding: JsImportBinding?
-    trailing_comma: ','?
 
-JsImportBinding = 
+JsImportBinding =
     'as' name: JsBindingIdentifier
 
-JsImportCall = 
+JsImportCall =
     'import'
     '('
     argument: JsExpression
@@ -699,41 +680,41 @@ JsImportCall =
 // let { x, y: [a] } = { x: 1, y: [0] }, // x, introduces the new bindings x and a
 // ```
 
-JsBinding = JsObjectBinding | JsArrayBinding | JsBindingIdentifier 
+JsBinding = JsObjectBinding | JsArrayBinding | JsBindingIdentifier
 
-JsDefaultValueClause = 
-    '=' 
+JsDefaultValueClause =
+    '='
     value: JsExpression
-    
+
 // let x = OR function(test) {}
 //     ^               ^^^^
 JsBindingIdentifier = name: 'js_identifier'
 
-// let [a, b] = test
-//     ^^^^^^
-JsArrayBinding = 
+// let [a, , b] = test
+//     ^^^^^^^^
+JsArrayBinding =
     '['
-    elements: AnyJsArrayBindingElement*
+    elements:  (JsArrayBindingElement (',' JsArrayBindingElement)* ','?)
     rest: JsArrayRestBinding?
     ']'
 
-AnyJsArrayBindingElement = JsArrayHole | JsArrayBindingElement
+JsArrayBindingElement = JsBindingWithDefault | JsArrayHole
 
-JsArrayBindingElement = 
-    binding: JsBinding 
+// Used in function parameters or for array elements in array bindings
+JsBindingWithDefault =
+    binding: JsBinding
     default_value: JsDefaultValueClause
-    trailing_comma: ','?
 
-JsArrayRestBinding = 
+JsArrayRestBinding =
     '...'
     binding: JsBinding
 
 
-// let {a, b, ...rest } = 
+// let {a, b, ...rest } =
 //     ^^^^^^^^^^^^^^^^
-JsObjectBinding = 
+JsObjectBinding =
     '{'
-        properties: AnyJsPropertyBinding*
+        properties: (AnyJsPropertyBinding (',' AnyJsPropertyBinding)* ','?)
         rest: JsObjectRestBinding?
     '}'
 
@@ -742,19 +723,17 @@ JsObjectBinding =
 AnyJsPropertyBinding = JsShorthandPropertyBinding | JsPropertyBinding
 
 // let { x } or let { x = "test" }
-JsShorthandPropertyBinding = 
+JsShorthandPropertyBinding =
     identifier: JsBindingIdentifier
     default_value: JsDefaultValueClause?
-    trailing_comma: ','?
 
 // let { x: a } or let { x: a = "test" }
 // JsDestructuredPropertyBinding
-JsPropertyBinding = 
+JsPropertyBinding =
     member: JsMember
     ':'
     binding: JsBinding
     default_value: JsDefaultValueClause?
-    trailing_comma: ','?
 
 
 JsObjectRestBinding = '...' binding: JsBindingIdentifier
@@ -772,78 +751,85 @@ JsIdentifierAssignmentTarget = name: 'js_identifier'
 
 // a.b = a['b'] = "test"
 // ^^^   ^^^^^^
-JsMemberAssignmentTarget = 
+JsMemberAssignmentTarget =
     object: JsExpression
     member: JsMember
 
 // [a, {b}, ...rest] = test
 // ^^^^^^^^^^^^^^^^^
-JsArrayAssignmentTarget = 
+JsArrayAssignmentTarget =
     '['
-        elements: AnyJsArrayAssignmentTargetElement*
+        elements: (JsArrayAssignmentTargetElement (',' JsArrayAssignmentTargetElement)* ','?)
         rest: JsArrayAssignmentRest?
     ']'
 
-JsArrayAssignmentRest = 
-    '...' 
+JsArrayAssignmentTargetElement = JsAssignmentTargetWithDefault | JsArrayHole
+
+JsAssignmentTargetWithDefault =
+    target: JsAssignmentTarget
+    default_value: JsDefaultValueClause
+
+JsArrayAssignmentRest =
+    '...'
     target: JsAssignmentTarget
 
-AnyJsArrayAssignmentTargetElement = JsArrayHole | JsArrayAssignmentTargetElement
-
-JsArrayAssignmentTargetElement = 
-    target: JsAssignmentTarget 
-    default_value: JsDefaultValueClause
-    trailing_comma: ','?
-
-// {a, b: x, ...rest} = 
+// {a, b: x, ...rest} =
 // ^^^^^^^^^^^^^^^^^^
-JsObjectAssignmentTarget = 
+JsObjectAssignmentTarget =
     '{'
-        properties: JsPropertyAssignmentTarget*
+        properties: (JsPropertyAssignmentTarget (',' JsPropertyAssignmentTarget)* ','?)
         rest: JsObjectRestAssignmentTarget?
     '}'
 
 JsPropertyAssignmentTarget = JsShorthandPropertyAssignmentTarget | JsObjectPropertyAssignmentTarget
 
 // { x } or { x = "test" }
-JsShorthandPropertyAssignmentTarget = 
+JsShorthandPropertyAssignmentTarget =
     identifier: JsIdentifierAssignmentTarget
     default_value: JsDefaultValueClause?
-    trailing_comma: ','?
 
 // let { x: a } or let { x: a = "test" }
 // JsDestructuredPropertyBinding
-JsObjectPropertyAssignmentTarget = 
+JsObjectPropertyAssignmentTarget =
     member: JsMember
     ':'
     target: JsAssignmentTarget
     default_value: JsDefaultValueClause?
-    trailing_comma: ','?
 
-JsObjectRestAssignmentTarget = '...' target: JsSimpleAssignmentTarget                                           
+JsObjectRestAssignmentTarget = '...' target: JsSimpleAssignmentTarget
 
 // --------------------- Auxilary ---------------------
 
+// The hole token will always be missing. Needed to make ungrammar happy
+JsArrayHole = hole: ''?
+
+JsStatementOrExpression = JsStatement | JsExpression
+
 // We can implement various helpers on the function union to replace `FunctionHead` (without paying for the abstraction)
-JsFunction = JsFunctionDeclaration 
-    | JsFunctionExpression 
+JsFunction = JsFunctionDeclaration
+    | JsFunctionExpression
     | JsArrowFunctionExpression
 
-JsParameterList = 
+JsParameterList =
     '('
-    parameters: JsParameter*
+    parameters: (JsParameter (',' JsParameter)* ','?)
     rest: JsRestParameter?
     ')'
 
-JsParameter = 
-    binding: JsBinding
-    default: JsDefaultValueClause?
-    trailing_comma: ','
+JsParameter = JsBinding | JsBindingWithDefault
 
 JsRestParameter = '...' binding: JsBinding
 
-JsIdentifier = 
+JsArgumentList =
+    '('
+    arguments: (JsArgument (',' JsArgument)* ','?)
+    ')'
+
+JsArgument = JsExpression | JsSpread
+
+
+JsIdentifier =
     name: 'js_identifier'
 
-JsSpread = 
+JsSpread =
     '...' argument: JsExpression

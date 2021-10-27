@@ -292,8 +292,13 @@ pub struct JsExportFrom {
 impl JsExportFrom {
 	pub fn export_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![export]) }
 	pub fn l_curly_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['{']) }
-	pub fn specifiers(&self) -> AstChildren<JsExportFromSpecifier> {
-		support::children(&self.syntax)
+	pub fn specifiers(&self) -> Option<JsExportFromSpecifier> { support::child(&self.syntax) }
+	pub fn specifiers_token(&self) -> Option<SyntaxToken> {
+		support::token(&self.syntax, T![specifiers])
+	}
+	pub fn specifiers(&self) -> Option<JsExportFromSpecifier> { support::child(&self.syntax) }
+	pub fn specifiers_token(&self) -> Option<SyntaxToken> {
+		support::token(&self.syntax, T![specifiers])
 	}
 	pub fn r_curly_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['}']) }
 	pub fn from_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![from]) }
@@ -387,7 +392,14 @@ pub struct JsParameterList {
 }
 impl JsParameterList {
 	pub fn l_paren_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['(']) }
-	pub fn parameters(&self) -> AstChildren<JsParameter> { support::children(&self.syntax) }
+	pub fn parameters(&self) -> Option<JsParameter> { support::child(&self.syntax) }
+	pub fn parameters_token(&self) -> Option<SyntaxToken> {
+		support::token(&self.syntax, T![parameters])
+	}
+	pub fn parameters(&self) -> Option<JsParameter> { support::child(&self.syntax) }
+	pub fn parameters_token(&self) -> Option<SyntaxToken> {
+		support::token(&self.syntax, T![parameters])
+	}
 	pub fn rest(&self) -> Option<JsRestParameter> { support::child(&self.syntax) }
 	pub fn r_paren_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![')']) }
 }
@@ -488,7 +500,14 @@ pub struct JsArrayExpression {
 }
 impl JsArrayExpression {
 	pub fn l_brack_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['[']) }
-	pub fn elements(&self) -> AstChildren<AnyJsArrayElement> { support::children(&self.syntax) }
+	pub fn elements(&self) -> Option<JsArrayElement> { support::child(&self.syntax) }
+	pub fn elements_token(&self) -> Option<SyntaxToken> {
+		support::token(&self.syntax, T![elements])
+	}
+	pub fn elements(&self) -> Option<JsArrayElement> { support::child(&self.syntax) }
+	pub fn elements_token(&self) -> Option<SyntaxToken> {
+		support::token(&self.syntax, T![elements])
+	}
 	pub fn r_brack_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![']']) }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -645,9 +664,7 @@ pub struct JsCallExpression {
 }
 impl JsCallExpression {
 	pub fn callee(&self) -> Option<JsExpression> { support::child(&self.syntax) }
-	pub fn l_paren_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['(']) }
-	pub fn arguments(&self) -> AstChildren<JsCallArgument> { support::children(&self.syntax) }
-	pub fn r_paren_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![')']) }
+	pub fn argument_list(&self) -> Option<JsArgumentList> { support::child(&self.syntax) }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsClassExpression {
@@ -738,9 +755,7 @@ pub struct JsNewExpression {
 impl JsNewExpression {
 	pub fn new_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![new]) }
 	pub fn callee(&self) -> Option<JsExpression> { support::child(&self.syntax) }
-	pub fn l_paren_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['(']) }
-	pub fn arguments(&self) -> AstChildren<JsCallArgument> { support::children(&self.syntax) }
-	pub fn r_paren_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![')']) }
+	pub fn argument_list(&self) -> Option<JsArgumentList> { support::child(&self.syntax) }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsObjectExpression {
@@ -748,7 +763,10 @@ pub struct JsObjectExpression {
 }
 impl JsObjectExpression {
 	pub fn l_curly_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['{']) }
-	pub fn members(&self) -> AstChildren<JsObjectMember> { support::children(&self.syntax) }
+	pub fn members(&self) -> Option<JsObjectMember> { support::child(&self.syntax) }
+	pub fn members_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![members]) }
+	pub fn members(&self) -> Option<JsObjectMember> { support::child(&self.syntax) }
+	pub fn members_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![members]) }
 	pub fn r_curly_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['}']) }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -756,12 +774,11 @@ pub struct JsOptionalCallExpression {
 	pub(crate) syntax: SyntaxNode,
 }
 impl JsOptionalCallExpression {
+	pub fn callee(&self) -> Option<JsExpression> { support::child(&self.syntax) }
 	pub fn optional_token(&self) -> Option<SyntaxToken> {
 		support::token(&self.syntax, T![optional])
 	}
-	pub fn l_paren_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['(']) }
-	pub fn arguments(&self) -> AstChildren<JsCallArgument> { support::children(&self.syntax) }
-	pub fn r_paren_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![')']) }
+	pub fn argument_list(&self) -> Option<JsArgumentList> { support::child(&self.syntax) }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsParenthesizedExpression {
@@ -923,61 +940,35 @@ impl JsTemplateLiteral {
 	}
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct JsArraySpreadElement {
-	pub(crate) syntax: SyntaxNode,
-}
-impl JsArraySpreadElement {
-	pub fn dotdotdot_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T ! [...]) }
-	pub fn argument(&self) -> Option<JsExpression> { support::child(&self.syntax) }
-	pub fn trailing_comma_token(&self) -> Option<SyntaxToken> {
-		support::token(&self.syntax, T![trailing_comma])
-	}
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct JsArrayElement {
-	pub(crate) syntax: SyntaxNode,
-}
-impl JsArrayElement {
-	pub fn expression(&self) -> Option<JsExpression> { support::child(&self.syntax) }
-	pub fn trailing_comma_token(&self) -> Option<SyntaxToken> {
-		support::token(&self.syntax, T![trailing_comma])
-	}
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct JsArrayHole {
-	pub(crate) syntax: SyntaxNode,
-}
-impl JsArrayHole {
-	pub fn comma_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![comma]) }
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct JsParameter {
-	pub(crate) syntax: SyntaxNode,
-}
-impl JsParameter {
-	pub fn binding(&self) -> Option<JsBinding> { support::child(&self.syntax) }
-	pub fn default(&self) -> Option<JsDefaultValueClause> { support::child(&self.syntax) }
-	pub fn trailing_comma_token(&self) -> Option<SyntaxToken> {
-		support::token(&self.syntax, T![trailing_comma])
-	}
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct JsCallArgument {
-	pub(crate) syntax: SyntaxNode,
-}
-impl JsCallArgument {
-	pub fn value(&self) -> Option<JsExpressionOrSpread> { support::child(&self.syntax) }
-	pub fn trailing_comma_token(&self) -> Option<SyntaxToken> {
-		support::token(&self.syntax, T![trailing_comma])
-	}
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsSpread {
 	pub(crate) syntax: SyntaxNode,
 }
 impl JsSpread {
 	pub fn dotdotdot_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T ! [...]) }
 	pub fn argument(&self) -> Option<JsExpression> { support::child(&self.syntax) }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct JsArrayHole {
+	pub(crate) syntax: SyntaxNode,
+}
+impl JsArrayHole {
+	pub fn hole_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![hole]) }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct JsArgumentList {
+	pub(crate) syntax: SyntaxNode,
+}
+impl JsArgumentList {
+	pub fn l_paren_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['(']) }
+	pub fn arguments(&self) -> Option<JsArgument> { support::child(&self.syntax) }
+	pub fn arguments_token(&self) -> Option<SyntaxToken> {
+		support::token(&self.syntax, T![arguments])
+	}
+	pub fn arguments(&self) -> Option<JsArgument> { support::child(&self.syntax) }
+	pub fn arguments_token(&self) -> Option<SyntaxToken> {
+		support::token(&self.syntax, T![arguments])
+	}
+	pub fn r_paren_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![')']) }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsStaticMember {
@@ -995,13 +986,6 @@ impl JsComputedMember {
 	pub fn l_brack_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['[']) }
 	pub fn name(&self) -> Option<JsExpression> { support::child(&self.syntax) }
 	pub fn r_brack_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![']']) }
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct JsIdentifier {
-	pub(crate) syntax: SyntaxNode,
-}
-impl JsIdentifier {
-	pub fn name_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![name]) }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsStringTemplateElement {
@@ -1115,18 +1099,22 @@ impl JsPrivateMethodClassMember {
 	pub fn body(&self) -> Option<JsFunctionBody> { support::child(&self.syntax) }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct JsIdentifier {
+	pub(crate) syntax: SyntaxNode,
+}
+impl JsIdentifier {
+	pub fn name_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![name]) }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsMethodObjectMember {
 	pub(crate) syntax: SyntaxNode,
 }
 impl JsMethodObjectMember {
 	pub fn async_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![async]) }
 	pub fn star_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T ! [*]) }
-	pub fn key(&self) -> Option<JsObjectMemberKey> { support::child(&self.syntax) }
+	pub fn name(&self) -> Option<JsObjectMemberName> { support::child(&self.syntax) }
 	pub fn parameter_list(&self) -> Option<JsParameterList> { support::child(&self.syntax) }
 	pub fn body(&self) -> Option<JsFunctionBody> { support::child(&self.syntax) }
-	pub fn trailing_comma_token(&self) -> Option<SyntaxToken> {
-		support::token(&self.syntax, T![trailing_comma])
-	}
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsGetterObjectMember {
@@ -1134,13 +1122,10 @@ pub struct JsGetterObjectMember {
 }
 impl JsGetterObjectMember {
 	pub fn get_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![get]) }
-	pub fn key(&self) -> Option<JsObjectMemberKey> { support::child(&self.syntax) }
+	pub fn name(&self) -> Option<JsObjectMemberName> { support::child(&self.syntax) }
 	pub fn l_paren_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['(']) }
 	pub fn r_paren_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![')']) }
 	pub fn body(&self) -> Option<JsFunctionBody> { support::child(&self.syntax) }
-	pub fn trailing_comma_token(&self) -> Option<SyntaxToken> {
-		support::token(&self.syntax, T![trailing_comma])
-	}
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsSetterObjectMember {
@@ -1148,37 +1133,20 @@ pub struct JsSetterObjectMember {
 }
 impl JsSetterObjectMember {
 	pub fn set_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![set]) }
-	pub fn key(&self) -> Option<JsObjectMemberKey> { support::child(&self.syntax) }
+	pub fn name(&self) -> Option<JsObjectMemberName> { support::child(&self.syntax) }
 	pub fn l_paren_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['(']) }
 	pub fn value(&self) -> Option<JsParameter> { support::child(&self.syntax) }
 	pub fn r_paren_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![')']) }
 	pub fn body(&self) -> Option<JsFunctionBody> { support::child(&self.syntax) }
-	pub fn trailing_comma_token(&self) -> Option<SyntaxToken> {
-		support::token(&self.syntax, T![trailing_comma])
-	}
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsPropertyObjectMember {
 	pub(crate) syntax: SyntaxNode,
 }
 impl JsPropertyObjectMember {
-	pub fn key(&self) -> Option<JsObjectMemberKey> { support::child(&self.syntax) }
+	pub fn name(&self) -> Option<JsObjectMemberName> { support::child(&self.syntax) }
 	pub fn colon_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T ! [:]) }
 	pub fn value(&self) -> Option<JsExpression> { support::child(&self.syntax) }
-	pub fn trailing_comma_token(&self) -> Option<SyntaxToken> {
-		support::token(&self.syntax, T![trailing_comma])
-	}
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct JsSpreadObjectMember {
-	pub(crate) syntax: SyntaxNode,
-}
-impl JsSpreadObjectMember {
-	pub fn dotdotdot_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T ! [...]) }
-	pub fn argument(&self) -> Option<JsExpression> { support::child(&self.syntax) }
-	pub fn trailing_comma_token(&self) -> Option<SyntaxToken> {
-		support::token(&self.syntax, T![trailing_comma])
-	}
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsExportFromSpecifier {
@@ -1187,9 +1155,6 @@ pub struct JsExportFromSpecifier {
 impl JsExportFromSpecifier {
 	pub fn name(&self) -> Option<JsIdentifier> { support::child(&self.syntax) }
 	pub fn export_name(&self) -> Option<JsExportName> { support::child(&self.syntax) }
-	pub fn trailing_comma_token(&self) -> Option<SyntaxToken> {
-		support::token(&self.syntax, T![trailing_comma])
-	}
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsExportName {
@@ -1234,8 +1199,13 @@ pub struct JsNamedImportClause {
 impl JsNamedImportClause {
 	pub fn default_binding(&self) -> Option<JsImportDefaultBinding> { support::child(&self.syntax) }
 	pub fn l_curly_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['{']) }
-	pub fn named_imports(&self) -> AstChildren<JsImportSpecifier> {
-		support::children(&self.syntax)
+	pub fn named_imports(&self) -> Option<JsImportSpecifier> { support::child(&self.syntax) }
+	pub fn named_imports_token(&self) -> Option<SyntaxToken> {
+		support::token(&self.syntax, T![named_imports])
+	}
+	pub fn named_imports(&self) -> Option<JsImportSpecifier> { support::child(&self.syntax) }
+	pub fn named_imports_token(&self) -> Option<SyntaxToken> {
+		support::token(&self.syntax, T![named_imports])
 	}
 	pub fn r_curly_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['}']) }
 }
@@ -1246,9 +1216,6 @@ pub struct JsImportSpecifier {
 impl JsImportSpecifier {
 	pub fn name(&self) -> Option<JsIdentifier> { support::child(&self.syntax) }
 	pub fn binding(&self) -> Option<JsImportBinding> { support::child(&self.syntax) }
-	pub fn trailing_comma_token(&self) -> Option<SyntaxToken> {
-		support::token(&self.syntax, T![trailing_comma])
-	}
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsImportBinding {
@@ -1264,8 +1231,13 @@ pub struct JsObjectBinding {
 }
 impl JsObjectBinding {
 	pub fn l_curly_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['{']) }
-	pub fn properties(&self) -> AstChildren<AnyJsPropertyBinding> {
-		support::children(&self.syntax)
+	pub fn properties(&self) -> Option<AnyJsPropertyBinding> { support::child(&self.syntax) }
+	pub fn properties_token(&self) -> Option<SyntaxToken> {
+		support::token(&self.syntax, T![properties])
+	}
+	pub fn properties(&self) -> Option<AnyJsPropertyBinding> { support::child(&self.syntax) }
+	pub fn properties_token(&self) -> Option<SyntaxToken> {
+		support::token(&self.syntax, T![properties])
 	}
 	pub fn rest(&self) -> Option<JsObjectRestBinding> { support::child(&self.syntax) }
 	pub fn r_curly_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['}']) }
@@ -1276,8 +1248,13 @@ pub struct JsArrayBinding {
 }
 impl JsArrayBinding {
 	pub fn l_brack_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['[']) }
-	pub fn elements(&self) -> AstChildren<AnyJsArrayBindingElement> {
-		support::children(&self.syntax)
+	pub fn elements(&self) -> Option<JsArrayBindingElement> { support::child(&self.syntax) }
+	pub fn elements_token(&self) -> Option<SyntaxToken> {
+		support::token(&self.syntax, T![elements])
+	}
+	pub fn elements(&self) -> Option<JsArrayBindingElement> { support::child(&self.syntax) }
+	pub fn elements_token(&self) -> Option<SyntaxToken> {
+		support::token(&self.syntax, T![elements])
 	}
 	pub fn rest(&self) -> Option<JsArrayRestBinding> { support::child(&self.syntax) }
 	pub fn r_brack_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![']']) }
@@ -1299,15 +1276,12 @@ impl JsArrayRestBinding {
 	pub fn binding(&self) -> Option<JsBinding> { support::child(&self.syntax) }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct JsArrayBindingElement {
+pub struct JsBindingWithDefault {
 	pub(crate) syntax: SyntaxNode,
 }
-impl JsArrayBindingElement {
+impl JsBindingWithDefault {
 	pub fn binding(&self) -> Option<JsBinding> { support::child(&self.syntax) }
 	pub fn default_value(&self) -> Option<JsDefaultValueClause> { support::child(&self.syntax) }
-	pub fn trailing_comma_token(&self) -> Option<SyntaxToken> {
-		support::token(&self.syntax, T![trailing_comma])
-	}
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsObjectRestBinding {
@@ -1324,9 +1298,6 @@ pub struct JsShorthandPropertyBinding {
 impl JsShorthandPropertyBinding {
 	pub fn identifier(&self) -> Option<JsBindingIdentifier> { support::child(&self.syntax) }
 	pub fn default_value(&self) -> Option<JsDefaultValueClause> { support::child(&self.syntax) }
-	pub fn trailing_comma_token(&self) -> Option<SyntaxToken> {
-		support::token(&self.syntax, T![trailing_comma])
-	}
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsPropertyBinding {
@@ -1337,9 +1308,6 @@ impl JsPropertyBinding {
 	pub fn colon_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T ! [:]) }
 	pub fn binding(&self) -> Option<JsBinding> { support::child(&self.syntax) }
 	pub fn default_value(&self) -> Option<JsDefaultValueClause> { support::child(&self.syntax) }
-	pub fn trailing_comma_token(&self) -> Option<SyntaxToken> {
-		support::token(&self.syntax, T![trailing_comma])
-	}
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsMemberAssignmentTarget {
@@ -1362,8 +1330,17 @@ pub struct JsArrayAssignmentTarget {
 }
 impl JsArrayAssignmentTarget {
 	pub fn l_brack_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['[']) }
-	pub fn elements(&self) -> AstChildren<AnyJsArrayAssignmentTargetElement> {
-		support::children(&self.syntax)
+	pub fn elements(&self) -> Option<JsArrayAssignmentTargetElement> {
+		support::child(&self.syntax)
+	}
+	pub fn elements_token(&self) -> Option<SyntaxToken> {
+		support::token(&self.syntax, T![elements])
+	}
+	pub fn elements(&self) -> Option<JsArrayAssignmentTargetElement> {
+		support::child(&self.syntax)
+	}
+	pub fn elements_token(&self) -> Option<SyntaxToken> {
+		support::token(&self.syntax, T![elements])
 	}
 	pub fn rest(&self) -> Option<JsArrayAssignmentRest> { support::child(&self.syntax) }
 	pub fn r_brack_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![']']) }
@@ -1374,8 +1351,13 @@ pub struct JsObjectAssignmentTarget {
 }
 impl JsObjectAssignmentTarget {
 	pub fn l_curly_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['{']) }
-	pub fn properties(&self) -> AstChildren<JsPropertyAssignmentTarget> {
-		support::children(&self.syntax)
+	pub fn properties(&self) -> Option<JsPropertyAssignmentTarget> { support::child(&self.syntax) }
+	pub fn properties_token(&self) -> Option<SyntaxToken> {
+		support::token(&self.syntax, T![properties])
+	}
+	pub fn properties(&self) -> Option<JsPropertyAssignmentTarget> { support::child(&self.syntax) }
+	pub fn properties_token(&self) -> Option<SyntaxToken> {
+		support::token(&self.syntax, T![properties])
 	}
 	pub fn rest(&self) -> Option<JsObjectRestAssignmentTarget> { support::child(&self.syntax) }
 	pub fn r_curly_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['}']) }
@@ -1389,15 +1371,12 @@ impl JsArrayAssignmentRest {
 	pub fn target(&self) -> Option<JsAssignmentTarget> { support::child(&self.syntax) }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct JsArrayAssignmentTargetElement {
+pub struct JsAssignmentTargetWithDefault {
 	pub(crate) syntax: SyntaxNode,
 }
-impl JsArrayAssignmentTargetElement {
+impl JsAssignmentTargetWithDefault {
 	pub fn target(&self) -> Option<JsAssignmentTarget> { support::child(&self.syntax) }
 	pub fn default_value(&self) -> Option<JsDefaultValueClause> { support::child(&self.syntax) }
-	pub fn trailing_comma_token(&self) -> Option<SyntaxToken> {
-		support::token(&self.syntax, T![trailing_comma])
-	}
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsObjectRestAssignmentTarget {
@@ -1416,9 +1395,6 @@ impl JsShorthandPropertyAssignmentTarget {
 		support::child(&self.syntax)
 	}
 	pub fn default_value(&self) -> Option<JsDefaultValueClause> { support::child(&self.syntax) }
-	pub fn trailing_comma_token(&self) -> Option<SyntaxToken> {
-		support::token(&self.syntax, T![trailing_comma])
-	}
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsObjectPropertyAssignmentTarget {
@@ -1429,9 +1405,6 @@ impl JsObjectPropertyAssignmentTarget {
 	pub fn colon_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T ! [:]) }
 	pub fn target(&self) -> Option<JsAssignmentTarget> { support::child(&self.syntax) }
 	pub fn default_value(&self) -> Option<JsDefaultValueClause> { support::child(&self.syntax) }
-	pub fn trailing_comma_token(&self) -> Option<SyntaxToken> {
-		support::token(&self.syntax, T![trailing_comma])
-	}
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JsRestParameter {
@@ -1538,9 +1511,9 @@ pub enum JsBinding {
 	JsBindingIdentifier(JsBindingIdentifier),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum AnyJsArrayElement {
-	JsArraySpreadElement(JsArraySpreadElement),
-	JsArrayElement(JsArrayElement),
+pub enum JsArrayElement {
+	JsSpread(JsSpread),
+	JsExpression(JsExpression),
 	JsArrayHole(JsArrayHole),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -1554,9 +1527,9 @@ pub enum JsStatementOrExpression {
 	JsExpression(JsExpression),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum JsExpressionOrSpread {
-	JsExpression(JsExpression),
-	JsSpread(JsSpread),
+pub enum JsParameter {
+	JsBinding(JsBinding),
+	JsBindingWithDefault(JsBindingWithDefault),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum JsMember {
@@ -1591,11 +1564,11 @@ pub enum JsClassMember {
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum JsClassMemberName {
-	JsObjectMemberKey(JsObjectMemberKey),
+	JsObjectMemberName(JsObjectMemberName),
 	JsPrivateClassMemberName(JsPrivateClassMemberName),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum JsObjectMemberKey {
+pub enum JsObjectMemberName {
 	JsStaticMemberName(JsStaticMemberName),
 	JsComputedMember(JsComputedMember),
 }
@@ -1605,7 +1578,7 @@ pub enum JsObjectMember {
 	JsGetterObjectMember(JsGetterObjectMember),
 	JsSetterObjectMember(JsSetterObjectMember),
 	JsPropertyObjectMember(JsPropertyObjectMember),
-	JsSpreadObjectMember(JsSpreadObjectMember),
+	JsSpread(JsSpread),
 	JsUnknownMember(JsUnknownMember),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -1627,9 +1600,9 @@ pub enum JsImportClause {
 	JsNamedImportClause(JsNamedImportClause),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum AnyJsArrayBindingElement {
+pub enum JsArrayBindingElement {
+	JsBindingWithDefault(JsBindingWithDefault),
 	JsArrayHole(JsArrayHole),
-	JsArrayBindingElement(JsArrayBindingElement),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum AnyJsPropertyBinding {
@@ -1637,9 +1610,9 @@ pub enum AnyJsPropertyBinding {
 	JsPropertyBinding(JsPropertyBinding),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum AnyJsArrayAssignmentTargetElement {
+pub enum JsArrayAssignmentTargetElement {
+	JsAssignmentTargetWithDefault(JsAssignmentTargetWithDefault),
 	JsArrayHole(JsArrayHole),
-	JsArrayAssignmentTargetElement(JsArrayAssignmentTargetElement),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum JsPropertyAssignmentTarget {
@@ -1651,6 +1624,11 @@ pub enum JsFunction {
 	JsFunctionDeclaration(JsFunctionDeclaration),
 	JsFunctionExpression(JsFunctionExpression),
 	JsArrowFunctionExpression(JsArrowFunctionExpression),
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum JsArgument {
+	JsExpression(JsExpression),
+	JsSpread(JsSpread),
 }
 impl AstNode for JsScript {
 	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_SCRIPT }
@@ -2521,19 +2499,8 @@ impl AstNode for JsTemplateLiteral {
 	}
 	fn syntax(&self) -> &SyntaxNode { &self.syntax }
 }
-impl AstNode for JsArraySpreadElement {
-	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_ARRAY_SPREAD_ELEMENT }
-	fn cast(syntax: SyntaxNode) -> Option<Self> {
-		if Self::can_cast(syntax.kind()) {
-			Some(Self { syntax })
-		} else {
-			None
-		}
-	}
-	fn syntax(&self) -> &SyntaxNode { &self.syntax }
-}
-impl AstNode for JsArrayElement {
-	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_ARRAY_ELEMENT }
+impl AstNode for JsSpread {
+	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_SPREAD }
 	fn cast(syntax: SyntaxNode) -> Option<Self> {
 		if Self::can_cast(syntax.kind()) {
 			Some(Self { syntax })
@@ -2554,30 +2521,8 @@ impl AstNode for JsArrayHole {
 	}
 	fn syntax(&self) -> &SyntaxNode { &self.syntax }
 }
-impl AstNode for JsParameter {
-	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_PARAMETER }
-	fn cast(syntax: SyntaxNode) -> Option<Self> {
-		if Self::can_cast(syntax.kind()) {
-			Some(Self { syntax })
-		} else {
-			None
-		}
-	}
-	fn syntax(&self) -> &SyntaxNode { &self.syntax }
-}
-impl AstNode for JsCallArgument {
-	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_CALL_ARGUMENT }
-	fn cast(syntax: SyntaxNode) -> Option<Self> {
-		if Self::can_cast(syntax.kind()) {
-			Some(Self { syntax })
-		} else {
-			None
-		}
-	}
-	fn syntax(&self) -> &SyntaxNode { &self.syntax }
-}
-impl AstNode for JsSpread {
-	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_SPREAD }
+impl AstNode for JsArgumentList {
+	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_ARGUMENT_LIST }
 	fn cast(syntax: SyntaxNode) -> Option<Self> {
 		if Self::can_cast(syntax.kind()) {
 			Some(Self { syntax })
@@ -2600,17 +2545,6 @@ impl AstNode for JsStaticMember {
 }
 impl AstNode for JsComputedMember {
 	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_COMPUTED_MEMBER }
-	fn cast(syntax: SyntaxNode) -> Option<Self> {
-		if Self::can_cast(syntax.kind()) {
-			Some(Self { syntax })
-		} else {
-			None
-		}
-	}
-	fn syntax(&self) -> &SyntaxNode { &self.syntax }
-}
-impl AstNode for JsIdentifier {
-	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_IDENTIFIER }
 	fn cast(syntax: SyntaxNode) -> Option<Self> {
 		if Self::can_cast(syntax.kind()) {
 			Some(Self { syntax })
@@ -2741,6 +2675,17 @@ impl AstNode for JsPrivateMethodClassMember {
 	}
 	fn syntax(&self) -> &SyntaxNode { &self.syntax }
 }
+impl AstNode for JsIdentifier {
+	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_IDENTIFIER }
+	fn cast(syntax: SyntaxNode) -> Option<Self> {
+		if Self::can_cast(syntax.kind()) {
+			Some(Self { syntax })
+		} else {
+			None
+		}
+	}
+	fn syntax(&self) -> &SyntaxNode { &self.syntax }
+}
 impl AstNode for JsMethodObjectMember {
 	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_METHOD_OBJECT_MEMBER }
 	fn cast(syntax: SyntaxNode) -> Option<Self> {
@@ -2776,17 +2721,6 @@ impl AstNode for JsSetterObjectMember {
 }
 impl AstNode for JsPropertyObjectMember {
 	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_PROPERTY_OBJECT_MEMBER }
-	fn cast(syntax: SyntaxNode) -> Option<Self> {
-		if Self::can_cast(syntax.kind()) {
-			Some(Self { syntax })
-		} else {
-			None
-		}
-	}
-	fn syntax(&self) -> &SyntaxNode { &self.syntax }
-}
-impl AstNode for JsSpreadObjectMember {
-	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_SPREAD_OBJECT_MEMBER }
 	fn cast(syntax: SyntaxNode) -> Option<Self> {
 		if Self::can_cast(syntax.kind()) {
 			Some(Self { syntax })
@@ -2928,8 +2862,8 @@ impl AstNode for JsArrayRestBinding {
 	}
 	fn syntax(&self) -> &SyntaxNode { &self.syntax }
 }
-impl AstNode for JsArrayBindingElement {
-	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_ARRAY_BINDING_ELEMENT }
+impl AstNode for JsBindingWithDefault {
+	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_BINDING_WITH_DEFAULT }
 	fn cast(syntax: SyntaxNode) -> Option<Self> {
 		if Self::can_cast(syntax.kind()) {
 			Some(Self { syntax })
@@ -3027,8 +2961,8 @@ impl AstNode for JsArrayAssignmentRest {
 	}
 	fn syntax(&self) -> &SyntaxNode { &self.syntax }
 }
-impl AstNode for JsArrayAssignmentTargetElement {
-	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_ARRAY_ASSIGNMENT_TARGET_ELEMENT }
+impl AstNode for JsAssignmentTargetWithDefault {
+	fn can_cast(kind: SyntaxKind) -> bool { kind == JS_ASSIGNMENT_TARGET_WITH_DEFAULT }
 	fn cast(syntax: SyntaxNode) -> Option<Self> {
 		if Self::can_cast(syntax.kind()) {
 			Some(Self { syntax })
@@ -3696,40 +3630,33 @@ impl AstNode for JsBinding {
 		}
 	}
 }
-impl From<JsArraySpreadElement> for AnyJsArrayElement {
-	fn from(node: JsArraySpreadElement) -> AnyJsArrayElement {
-		AnyJsArrayElement::JsArraySpreadElement(node)
-	}
+impl From<JsSpread> for JsArrayElement {
+	fn from(node: JsSpread) -> JsArrayElement { JsArrayElement::JsSpread(node) }
 }
-impl From<JsArrayElement> for AnyJsArrayElement {
-	fn from(node: JsArrayElement) -> AnyJsArrayElement { AnyJsArrayElement::JsArrayElement(node) }
+impl From<JsExpression> for JsArrayElement {
+	fn from(node: JsExpression) -> JsArrayElement { JsArrayElement::JsExpression(node) }
 }
-impl From<JsArrayHole> for AnyJsArrayElement {
-	fn from(node: JsArrayHole) -> AnyJsArrayElement { AnyJsArrayElement::JsArrayHole(node) }
+impl From<JsArrayHole> for JsArrayElement {
+	fn from(node: JsArrayHole) -> JsArrayElement { JsArrayElement::JsArrayHole(node) }
 }
-impl AstNode for AnyJsArrayElement {
+impl AstNode for JsArrayElement {
 	fn can_cast(kind: SyntaxKind) -> bool {
-		matches!(
-			kind,
-			JS_ARRAY_SPREAD_ELEMENT | JS_ARRAY_ELEMENT | JS_ARRAY_HOLE
-		)
+		matches!(kind, JS_SPREAD | JS_EXPRESSION | JS_ARRAY_HOLE)
 	}
 	fn cast(syntax: SyntaxNode) -> Option<Self> {
 		let res = match syntax.kind() {
-			JS_ARRAY_SPREAD_ELEMENT => {
-				AnyJsArrayElement::JsArraySpreadElement(JsArraySpreadElement { syntax })
-			}
-			JS_ARRAY_ELEMENT => AnyJsArrayElement::JsArrayElement(JsArrayElement { syntax }),
-			JS_ARRAY_HOLE => AnyJsArrayElement::JsArrayHole(JsArrayHole { syntax }),
+			JS_SPREAD => JsArrayElement::JsSpread(JsSpread { syntax }),
+			JS_EXPRESSION => JsArrayElement::JsExpression(JsExpression { syntax }),
+			JS_ARRAY_HOLE => JsArrayElement::JsArrayHole(JsArrayHole { syntax }),
 			_ => return None,
 		};
 		Some(res)
 	}
 	fn syntax(&self) -> &SyntaxNode {
 		match self {
-			AnyJsArrayElement::JsArraySpreadElement(it) => &it.syntax,
-			AnyJsArrayElement::JsArrayElement(it) => &it.syntax,
-			AnyJsArrayElement::JsArrayHole(it) => &it.syntax,
+			JsArrayElement::JsSpread(it) => &it.syntax,
+			JsArrayElement::JsExpression(it) => &it.syntax,
+			JsArrayElement::JsArrayHole(it) => &it.syntax,
 		}
 	}
 }
@@ -3789,26 +3716,28 @@ impl AstNode for JsStatementOrExpression {
 		}
 	}
 }
-impl From<JsExpression> for JsExpressionOrSpread {
-	fn from(node: JsExpression) -> JsExpressionOrSpread { JsExpressionOrSpread::JsExpression(node) }
+impl From<JsBinding> for JsParameter {
+	fn from(node: JsBinding) -> JsParameter { JsParameter::JsBinding(node) }
 }
-impl From<JsSpread> for JsExpressionOrSpread {
-	fn from(node: JsSpread) -> JsExpressionOrSpread { JsExpressionOrSpread::JsSpread(node) }
+impl From<JsBindingWithDefault> for JsParameter {
+	fn from(node: JsBindingWithDefault) -> JsParameter { JsParameter::JsBindingWithDefault(node) }
 }
-impl AstNode for JsExpressionOrSpread {
-	fn can_cast(kind: SyntaxKind) -> bool { matches!(kind, JS_EXPRESSION | JS_SPREAD) }
+impl AstNode for JsParameter {
+	fn can_cast(kind: SyntaxKind) -> bool { matches!(kind, JS_BINDING | JS_BINDING_WITH_DEFAULT) }
 	fn cast(syntax: SyntaxNode) -> Option<Self> {
 		let res = match syntax.kind() {
-			JS_EXPRESSION => JsExpressionOrSpread::JsExpression(JsExpression { syntax }),
-			JS_SPREAD => JsExpressionOrSpread::JsSpread(JsSpread { syntax }),
+			JS_BINDING => JsParameter::JsBinding(JsBinding { syntax }),
+			JS_BINDING_WITH_DEFAULT => {
+				JsParameter::JsBindingWithDefault(JsBindingWithDefault { syntax })
+			}
 			_ => return None,
 		};
 		Some(res)
 	}
 	fn syntax(&self) -> &SyntaxNode {
 		match self {
-			JsExpressionOrSpread::JsExpression(it) => &it.syntax,
-			JsExpressionOrSpread::JsSpread(it) => &it.syntax,
+			JsParameter::JsBinding(it) => &it.syntax,
+			JsParameter::JsBindingWithDefault(it) => &it.syntax,
 		}
 	}
 }
@@ -4015,9 +3944,9 @@ impl AstNode for JsClassMember {
 		}
 	}
 }
-impl From<JsObjectMemberKey> for JsClassMemberName {
-	fn from(node: JsObjectMemberKey) -> JsClassMemberName {
-		JsClassMemberName::JsObjectMemberKey(node)
+impl From<JsObjectMemberName> for JsClassMemberName {
+	fn from(node: JsObjectMemberName) -> JsClassMemberName {
+		JsClassMemberName::JsObjectMemberName(node)
 	}
 }
 impl From<JsPrivateClassMemberName> for JsClassMemberName {
@@ -4027,12 +3956,12 @@ impl From<JsPrivateClassMemberName> for JsClassMemberName {
 }
 impl AstNode for JsClassMemberName {
 	fn can_cast(kind: SyntaxKind) -> bool {
-		matches!(kind, JS_OBJECT_MEMBER_KEY | JS_PRIVATE_CLASS_MEMBER_NAME)
+		matches!(kind, JS_OBJECT_MEMBER_NAME | JS_PRIVATE_CLASS_MEMBER_NAME)
 	}
 	fn cast(syntax: SyntaxNode) -> Option<Self> {
 		let res = match syntax.kind() {
-			JS_OBJECT_MEMBER_KEY => {
-				JsClassMemberName::JsObjectMemberKey(JsObjectMemberKey { syntax })
+			JS_OBJECT_MEMBER_NAME => {
+				JsClassMemberName::JsObjectMemberName(JsObjectMemberName { syntax })
 			}
 			JS_PRIVATE_CLASS_MEMBER_NAME => {
 				JsClassMemberName::JsPrivateClassMemberName(JsPrivateClassMemberName { syntax })
@@ -4043,39 +3972,39 @@ impl AstNode for JsClassMemberName {
 	}
 	fn syntax(&self) -> &SyntaxNode {
 		match self {
-			JsClassMemberName::JsObjectMemberKey(it) => &it.syntax,
+			JsClassMemberName::JsObjectMemberName(it) => &it.syntax,
 			JsClassMemberName::JsPrivateClassMemberName(it) => &it.syntax,
 		}
 	}
 }
-impl From<JsStaticMemberName> for JsObjectMemberKey {
-	fn from(node: JsStaticMemberName) -> JsObjectMemberKey {
-		JsObjectMemberKey::JsStaticMemberName(node)
+impl From<JsStaticMemberName> for JsObjectMemberName {
+	fn from(node: JsStaticMemberName) -> JsObjectMemberName {
+		JsObjectMemberName::JsStaticMemberName(node)
 	}
 }
-impl From<JsComputedMember> for JsObjectMemberKey {
-	fn from(node: JsComputedMember) -> JsObjectMemberKey {
-		JsObjectMemberKey::JsComputedMember(node)
+impl From<JsComputedMember> for JsObjectMemberName {
+	fn from(node: JsComputedMember) -> JsObjectMemberName {
+		JsObjectMemberName::JsComputedMember(node)
 	}
 }
-impl AstNode for JsObjectMemberKey {
+impl AstNode for JsObjectMemberName {
 	fn can_cast(kind: SyntaxKind) -> bool {
 		matches!(kind, JS_STATIC_MEMBER_NAME | JS_COMPUTED_MEMBER)
 	}
 	fn cast(syntax: SyntaxNode) -> Option<Self> {
 		let res = match syntax.kind() {
 			JS_STATIC_MEMBER_NAME => {
-				JsObjectMemberKey::JsStaticMemberName(JsStaticMemberName { syntax })
+				JsObjectMemberName::JsStaticMemberName(JsStaticMemberName { syntax })
 			}
-			JS_COMPUTED_MEMBER => JsObjectMemberKey::JsComputedMember(JsComputedMember { syntax }),
+			JS_COMPUTED_MEMBER => JsObjectMemberName::JsComputedMember(JsComputedMember { syntax }),
 			_ => return None,
 		};
 		Some(res)
 	}
 	fn syntax(&self) -> &SyntaxNode {
 		match self {
-			JsObjectMemberKey::JsStaticMemberName(it) => &it.syntax,
-			JsObjectMemberKey::JsComputedMember(it) => &it.syntax,
+			JsObjectMemberName::JsStaticMemberName(it) => &it.syntax,
+			JsObjectMemberName::JsComputedMember(it) => &it.syntax,
 		}
 	}
 }
@@ -4099,10 +4028,8 @@ impl From<JsPropertyObjectMember> for JsObjectMember {
 		JsObjectMember::JsPropertyObjectMember(node)
 	}
 }
-impl From<JsSpreadObjectMember> for JsObjectMember {
-	fn from(node: JsSpreadObjectMember) -> JsObjectMember {
-		JsObjectMember::JsSpreadObjectMember(node)
-	}
+impl From<JsSpread> for JsObjectMember {
+	fn from(node: JsSpread) -> JsObjectMember { JsObjectMember::JsSpread(node) }
 }
 impl From<JsUnknownMember> for JsObjectMember {
 	fn from(node: JsUnknownMember) -> JsObjectMember { JsObjectMember::JsUnknownMember(node) }
@@ -4115,8 +4042,7 @@ impl AstNode for JsObjectMember {
 				| JS_GETTER_OBJECT_MEMBER
 				| JS_SETTER_OBJECT_MEMBER
 				| JS_PROPERTY_OBJECT_MEMBER
-				| JS_SPREAD_OBJECT_MEMBER
-				| JS_UNKNOWN_MEMBER
+				| JS_SPREAD | JS_UNKNOWN_MEMBER
 		)
 	}
 	fn cast(syntax: SyntaxNode) -> Option<Self> {
@@ -4133,9 +4059,7 @@ impl AstNode for JsObjectMember {
 			JS_PROPERTY_OBJECT_MEMBER => {
 				JsObjectMember::JsPropertyObjectMember(JsPropertyObjectMember { syntax })
 			}
-			JS_SPREAD_OBJECT_MEMBER => {
-				JsObjectMember::JsSpreadObjectMember(JsSpreadObjectMember { syntax })
-			}
+			JS_SPREAD => JsObjectMember::JsSpread(JsSpread { syntax }),
 			JS_UNKNOWN_MEMBER => JsObjectMember::JsUnknownMember(JsUnknownMember { syntax }),
 			_ => return None,
 		};
@@ -4147,7 +4071,7 @@ impl AstNode for JsObjectMember {
 			JsObjectMember::JsGetterObjectMember(it) => &it.syntax,
 			JsObjectMember::JsSetterObjectMember(it) => &it.syntax,
 			JsObjectMember::JsPropertyObjectMember(it) => &it.syntax,
-			JsObjectMember::JsSpreadObjectMember(it) => &it.syntax,
+			JsObjectMember::JsSpread(it) => &it.syntax,
 			JsObjectMember::JsUnknownMember(it) => &it.syntax,
 		}
 	}
@@ -4291,34 +4215,32 @@ impl AstNode for JsImportClause {
 		}
 	}
 }
-impl From<JsArrayHole> for AnyJsArrayBindingElement {
-	fn from(node: JsArrayHole) -> AnyJsArrayBindingElement {
-		AnyJsArrayBindingElement::JsArrayHole(node)
+impl From<JsBindingWithDefault> for JsArrayBindingElement {
+	fn from(node: JsBindingWithDefault) -> JsArrayBindingElement {
+		JsArrayBindingElement::JsBindingWithDefault(node)
 	}
 }
-impl From<JsArrayBindingElement> for AnyJsArrayBindingElement {
-	fn from(node: JsArrayBindingElement) -> AnyJsArrayBindingElement {
-		AnyJsArrayBindingElement::JsArrayBindingElement(node)
-	}
+impl From<JsArrayHole> for JsArrayBindingElement {
+	fn from(node: JsArrayHole) -> JsArrayBindingElement { JsArrayBindingElement::JsArrayHole(node) }
 }
-impl AstNode for AnyJsArrayBindingElement {
+impl AstNode for JsArrayBindingElement {
 	fn can_cast(kind: SyntaxKind) -> bool {
-		matches!(kind, JS_ARRAY_HOLE | JS_ARRAY_BINDING_ELEMENT)
+		matches!(kind, JS_BINDING_WITH_DEFAULT | JS_ARRAY_HOLE)
 	}
 	fn cast(syntax: SyntaxNode) -> Option<Self> {
 		let res = match syntax.kind() {
-			JS_ARRAY_HOLE => AnyJsArrayBindingElement::JsArrayHole(JsArrayHole { syntax }),
-			JS_ARRAY_BINDING_ELEMENT => {
-				AnyJsArrayBindingElement::JsArrayBindingElement(JsArrayBindingElement { syntax })
+			JS_BINDING_WITH_DEFAULT => {
+				JsArrayBindingElement::JsBindingWithDefault(JsBindingWithDefault { syntax })
 			}
+			JS_ARRAY_HOLE => JsArrayBindingElement::JsArrayHole(JsArrayHole { syntax }),
 			_ => return None,
 		};
 		Some(res)
 	}
 	fn syntax(&self) -> &SyntaxNode {
 		match self {
-			AnyJsArrayBindingElement::JsArrayHole(it) => &it.syntax,
-			AnyJsArrayBindingElement::JsArrayBindingElement(it) => &it.syntax,
+			JsArrayBindingElement::JsBindingWithDefault(it) => &it.syntax,
+			JsArrayBindingElement::JsArrayHole(it) => &it.syntax,
 		}
 	}
 }
@@ -4357,36 +4279,36 @@ impl AstNode for AnyJsPropertyBinding {
 		}
 	}
 }
-impl From<JsArrayHole> for AnyJsArrayAssignmentTargetElement {
-	fn from(node: JsArrayHole) -> AnyJsArrayAssignmentTargetElement {
-		AnyJsArrayAssignmentTargetElement::JsArrayHole(node)
+impl From<JsAssignmentTargetWithDefault> for JsArrayAssignmentTargetElement {
+	fn from(node: JsAssignmentTargetWithDefault) -> JsArrayAssignmentTargetElement {
+		JsArrayAssignmentTargetElement::JsAssignmentTargetWithDefault(node)
 	}
 }
-impl From<JsArrayAssignmentTargetElement> for AnyJsArrayAssignmentTargetElement {
-	fn from(node: JsArrayAssignmentTargetElement) -> AnyJsArrayAssignmentTargetElement {
-		AnyJsArrayAssignmentTargetElement::JsArrayAssignmentTargetElement(node)
+impl From<JsArrayHole> for JsArrayAssignmentTargetElement {
+	fn from(node: JsArrayHole) -> JsArrayAssignmentTargetElement {
+		JsArrayAssignmentTargetElement::JsArrayHole(node)
 	}
 }
-impl AstNode for AnyJsArrayAssignmentTargetElement {
+impl AstNode for JsArrayAssignmentTargetElement {
 	fn can_cast(kind: SyntaxKind) -> bool {
-		matches!(kind, JS_ARRAY_HOLE | JS_ARRAY_ASSIGNMENT_TARGET_ELEMENT)
+		matches!(kind, JS_ASSIGNMENT_TARGET_WITH_DEFAULT | JS_ARRAY_HOLE)
 	}
 	fn cast(syntax: SyntaxNode) -> Option<Self> {
 		let res = match syntax.kind() {
-			JS_ARRAY_HOLE => AnyJsArrayAssignmentTargetElement::JsArrayHole(JsArrayHole { syntax }),
-			JS_ARRAY_ASSIGNMENT_TARGET_ELEMENT => {
-				AnyJsArrayAssignmentTargetElement::JsArrayAssignmentTargetElement(
-					JsArrayAssignmentTargetElement { syntax },
+			JS_ASSIGNMENT_TARGET_WITH_DEFAULT => {
+				JsArrayAssignmentTargetElement::JsAssignmentTargetWithDefault(
+					JsAssignmentTargetWithDefault { syntax },
 				)
 			}
+			JS_ARRAY_HOLE => JsArrayAssignmentTargetElement::JsArrayHole(JsArrayHole { syntax }),
 			_ => return None,
 		};
 		Some(res)
 	}
 	fn syntax(&self) -> &SyntaxNode {
 		match self {
-			AnyJsArrayAssignmentTargetElement::JsArrayHole(it) => &it.syntax,
-			AnyJsArrayAssignmentTargetElement::JsArrayAssignmentTargetElement(it) => &it.syntax,
+			JsArrayAssignmentTargetElement::JsAssignmentTargetWithDefault(it) => &it.syntax,
+			JsArrayAssignmentTargetElement::JsArrayHole(it) => &it.syntax,
 		}
 	}
 }
@@ -4471,6 +4393,29 @@ impl AstNode for JsFunction {
 		}
 	}
 }
+impl From<JsExpression> for JsArgument {
+	fn from(node: JsExpression) -> JsArgument { JsArgument::JsExpression(node) }
+}
+impl From<JsSpread> for JsArgument {
+	fn from(node: JsSpread) -> JsArgument { JsArgument::JsSpread(node) }
+}
+impl AstNode for JsArgument {
+	fn can_cast(kind: SyntaxKind) -> bool { matches!(kind, JS_EXPRESSION | JS_SPREAD) }
+	fn cast(syntax: SyntaxNode) -> Option<Self> {
+		let res = match syntax.kind() {
+			JS_EXPRESSION => JsArgument::JsExpression(JsExpression { syntax }),
+			JS_SPREAD => JsArgument::JsSpread(JsSpread { syntax }),
+			_ => return None,
+		};
+		Some(res)
+	}
+	fn syntax(&self) -> &SyntaxNode {
+		match self {
+			JsArgument::JsExpression(it) => &it.syntax,
+			JsArgument::JsSpread(it) => &it.syntax,
+		}
+	}
+}
 impl std::fmt::Display for JsStatement {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		std::fmt::Display::fmt(self.syntax(), f)
@@ -4511,7 +4456,7 @@ impl std::fmt::Display for JsBinding {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
 }
-impl std::fmt::Display for AnyJsArrayElement {
+impl std::fmt::Display for JsArrayElement {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
@@ -4526,7 +4471,7 @@ impl std::fmt::Display for JsStatementOrExpression {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
 }
-impl std::fmt::Display for JsExpressionOrSpread {
+impl std::fmt::Display for JsParameter {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
@@ -4561,7 +4506,7 @@ impl std::fmt::Display for JsClassMemberName {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
 }
-impl std::fmt::Display for JsObjectMemberKey {
+impl std::fmt::Display for JsObjectMemberName {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
@@ -4586,7 +4531,7 @@ impl std::fmt::Display for JsImportClause {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
 }
-impl std::fmt::Display for AnyJsArrayBindingElement {
+impl std::fmt::Display for JsArrayBindingElement {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
@@ -4596,7 +4541,7 @@ impl std::fmt::Display for AnyJsPropertyBinding {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
 }
-impl std::fmt::Display for AnyJsArrayAssignmentTargetElement {
+impl std::fmt::Display for JsArrayAssignmentTargetElement {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
@@ -4607,6 +4552,11 @@ impl std::fmt::Display for JsPropertyAssignmentTarget {
 	}
 }
 impl std::fmt::Display for JsFunction {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		std::fmt::Display::fmt(self.syntax(), f)
+	}
+}
+impl std::fmt::Display for JsArgument {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
@@ -5006,12 +4956,7 @@ impl std::fmt::Display for JsTemplateLiteral {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
 }
-impl std::fmt::Display for JsArraySpreadElement {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		std::fmt::Display::fmt(self.syntax(), f)
-	}
-}
-impl std::fmt::Display for JsArrayElement {
+impl std::fmt::Display for JsSpread {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
@@ -5021,17 +4966,7 @@ impl std::fmt::Display for JsArrayHole {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
 }
-impl std::fmt::Display for JsParameter {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		std::fmt::Display::fmt(self.syntax(), f)
-	}
-}
-impl std::fmt::Display for JsCallArgument {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		std::fmt::Display::fmt(self.syntax(), f)
-	}
-}
-impl std::fmt::Display for JsSpread {
+impl std::fmt::Display for JsArgumentList {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
@@ -5042,11 +4977,6 @@ impl std::fmt::Display for JsStaticMember {
 	}
 }
 impl std::fmt::Display for JsComputedMember {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		std::fmt::Display::fmt(self.syntax(), f)
-	}
-}
-impl std::fmt::Display for JsIdentifier {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
@@ -5106,6 +5036,11 @@ impl std::fmt::Display for JsPrivateMethodClassMember {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
 }
+impl std::fmt::Display for JsIdentifier {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		std::fmt::Display::fmt(self.syntax(), f)
+	}
+}
 impl std::fmt::Display for JsMethodObjectMember {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		std::fmt::Display::fmt(self.syntax(), f)
@@ -5122,11 +5057,6 @@ impl std::fmt::Display for JsSetterObjectMember {
 	}
 }
 impl std::fmt::Display for JsPropertyObjectMember {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		std::fmt::Display::fmt(self.syntax(), f)
-	}
-}
-impl std::fmt::Display for JsSpreadObjectMember {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
@@ -5191,7 +5121,7 @@ impl std::fmt::Display for JsArrayRestBinding {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
 }
-impl std::fmt::Display for JsArrayBindingElement {
+impl std::fmt::Display for JsBindingWithDefault {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
@@ -5236,7 +5166,7 @@ impl std::fmt::Display for JsArrayAssignmentRest {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
 }
-impl std::fmt::Display for JsArrayAssignmentTargetElement {
+impl std::fmt::Display for JsAssignmentTargetWithDefault {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		std::fmt::Display::fmt(self.syntax(), f)
 	}
