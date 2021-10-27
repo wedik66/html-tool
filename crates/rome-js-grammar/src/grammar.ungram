@@ -11,40 +11,6 @@
 //   `ArrayElement = value: Expression, trailing_comma: ','`
 //   This to guarantee that all tokens can be accessed and that you have a single type of children nodes
 
-
-// Rules across all nodes
-// * Prefix with 'Js'
-// * Don't abbreviate names, Expr -> Expression, Stmt -> Statement, Decl -> Declaration, Fn -> Function...
-
-// Questions
-// - Should we prefix tokens like `;`, `if` that are simple character sequences -> NO? They all share the same semantics, even if they differ in casing (e.g. `true` vs `True` vs `TRUE`)
-// - Split different expressions: Unary/Binary/Update by operator. Roslyn has PreIncrementExpression, PreDecrementExpression, AddExpression, etc. Makes it easier to match for a specific node without having to match on the token as well.
-//                                but results in many more nodes. Main advantage if you want to query. Hey, I'm interested in all add expressions -> node.descendants::<BinaryAddExpression>() vs node.descendants::<BinaryExpression>().filter(|n| n.operator() == '++');
-// - Unify JsScript and JsModule? Or do we need it because we currently can't store any additional meta data on nodes. If we keep it, add a `JsRoot` that holds the shared fields?
-// - RSLint has a JsCondition='(' JsExpression ')' that is used in If/While/Do-While and Switch statements. Should we keep it? No -> Unnecessary nesting? Same for formal parameters
-// - Conformance of the AST: A few examples -> NO?
-//   - if (test) var a = 10; is legit whereas if (test) let a = 10; isn't
-//   - using import/export only allowed inside of a module
-//   - contextual keywords. E.g. await expression outside of async functions.
-// - should the parser generate a JsNode and JsToken type that is a union over all nodes/tokens? -> Yes?
-// - when should the optional trailing comma be part of the element (e.g. array) or should the element have a value that's over a union type
-// - Decide on member/property naming. ClassMember, MemberExpression (but uses object and property)
-// - revisit to see if we can extract more shared nodes, for example a type for all parameters
-// - ungrammer extensions / syntax generator:
-//      - add support for /// comments to ungrammar and expose them in the parser for documentation?
-//      - add support for + qualifier
-//      - support labels (interpreter: 'js_shebang')
-//      - Automatically strip 'Js' prefix from methods (so that we can remove many of the labels)
-//      - Support union types (e.g. don't generate multiple operator fields for the binary expression operators)
-//      - Generate different return types for mandatory/optional nodes
-//      - Inline use of unions inside another union and provide a `From<OtherUnion>` implementation.
-// - Commas are annoying. Not always allowed (e.g. setter param). Roslyn has SeparatedList. Unclear how this would work with missing separators (or can we assume the parser never inserts separators)? and from a typing
-//      Rust analyzer has a heuristic to match (T (',' T)* ','?) https://github.com/rust-analyzer/rust-analyzer/blob/dfa355b4313a7ea3eb5a262ee9f1da71f50884d5/crates/syntax/src/tests/sourcegen_ast.rs#L676
-//      Can we use this to implement our own `SeparatedList` that has different views (nodes() -> Iterable<T or Result<T>?>, separators() ->  Iterable<SyntaxToken>, elements() -> Iterable<Element> whith Element = struct { node: Result<T>, trailing_separator: Option<SyntaxToken> })
-//      How would this work with error handling? E.g. what if the node or the separator is missing? Not possible? because missing separator -> Only one element. Missing element -> Which is why it's a `Result`.
-//      Can also offer mutation APIs on top
-
-
 JsScript =
     interpreter: 'js_shebang'? // rslint: shebang
     directives: 'js_directive'* // Or a directive node?
@@ -66,6 +32,8 @@ JsUnknownStatement = SyntaxElement*
 JsUnknownExpression = SyntaxElement*
 JsUnknownPattern = SyntaxElement*
 JsUnknownMember = SyntaxElement*
+JsUnknownBinding = SyntaxElement*
+JsUnknownAssignmentTarget = SyntaxElement*
 
 // --------------------- Statements ---------------------
 
@@ -308,7 +276,6 @@ JsAssignmentExpression =
 JsAwaitExpression =
     'await' argument: JsExpression
 
-// Split out Compound assignment for the "updating" operators because the left must then be a JsSimpleAssignmentTarget???
 JsBinaryExpression =
     left: JsExpression
     operator: ('==' | '!=' | '===' | '**' | '!==' | '<' | '<=' | '>' | '>=' | '<<' | '>>' | '>>>' | '+' | '-' | '*' | '/' | '%' | '|' | '^' | '&' | 'in' | 'instanceof')
@@ -680,7 +647,7 @@ JsImportCall =
 // let { x, y: [a] } = { x: 1, y: [0] }, // x, introduces the new bindings x and a
 // ```
 
-JsBinding = JsObjectBinding | JsArrayBinding | JsBindingIdentifier
+JsBinding = JsObjectBinding | JsArrayBinding | JsBindingIdentifier | JsUnknownBinding
 
 JsDefaultValueClause =
     '='
@@ -741,7 +708,7 @@ JsObjectRestBinding = '...' binding: JsBindingIdentifier
 // --------------------- Assignment targets  ---------------------
 
 
-JsSimpleAssignmentTarget = JsMemberAssignmentTarget | JsIdentifierAssignmentTarget
+JsSimpleAssignmentTarget = JsMemberAssignmentTarget | JsIdentifierAssignmentTarget | JsUnknownAssignmentTarget
 
 JsAssignmentTarget = JsSimpleAssignmentTarget | JsArrayAssignmentTarget | JsObjectAssignmentTarget
 
