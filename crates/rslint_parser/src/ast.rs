@@ -191,6 +191,8 @@ pub struct AstSeparatedElement<N> {
 	trailing_separator: Option<SyntaxToken>,
 }
 
+/// List of nodes where every two nodes are separated by a token.
+/// For example, the elements of an array where every two elements are separated by a comma token.
 #[derive(Debug, Clone)]
 pub struct AstSeparatedList<N> {
 	list: SyntaxList,
@@ -254,7 +256,7 @@ pub struct AstSeparatedListElementsIterator<N> {
 }
 
 impl<N> AstSeparatedListElementsIterator<N> {
-	// TODO 1724: Replace with call to next once trivia are no longer stored in tokens.
+	// TODO 1724: Replace with call to next once trivia are no longer stored in tokens and errors are part of the union types.
 	fn next_non_trivia_or_error(&mut self) -> Option<SyntaxElement> {
 		self.next.find_map(|element| match &element {
 			NodeOrToken::Node(node) => {

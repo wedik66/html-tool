@@ -242,7 +242,9 @@ pub struct VarDecl {
 impl VarDecl {
 	pub fn var_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![var]) }
 	pub fn const_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![const]) }
-	pub fn declared(&self) -> AstNodeList<Declarator> { support::node_list(&self.syntax, 0usize) }
+	pub fn declared(&self) -> AstSeparatedList<Declarator> {
+		support::separated_list(&self.syntax, 0usize)
+	}
 	pub fn semicolon_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T ! [;]) }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -442,7 +444,9 @@ pub struct ObjectExpr {
 }
 impl ObjectExpr {
 	pub fn l_curly_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['{']) }
-	pub fn props(&self) -> AstNodeList<ObjectProp> { support::node_list(&self.syntax, 0usize) }
+	pub fn props(&self) -> AstSeparatedList<ObjectProp> {
+		support::separated_list(&self.syntax, 0usize)
+	}
 	pub fn r_curly_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['}']) }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -599,7 +603,7 @@ pub struct SequenceExpr {
 	pub(crate) syntax: SyntaxNode,
 }
 impl SequenceExpr {
-	pub fn exprs(&self) -> AstNodeList<Expr> { support::node_list(&self.syntax, 0usize) }
+	pub fn exprs(&self) -> AstSeparatedList<Expr> { support::separated_list(&self.syntax, 0usize) }
 	pub fn bin_expr(&self) -> Option<BinExpr> { support::child(&self.syntax) }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -740,7 +744,7 @@ pub struct ArgList {
 }
 impl ArgList {
 	pub fn l_paren_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['(']) }
-	pub fn args(&self) -> AstNodeList<Expr> { support::node_list(&self.syntax, 0usize) }
+	pub fn args(&self) -> AstSeparatedList<Expr> { support::separated_list(&self.syntax, 0usize) }
 	pub fn r_paren_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![')']) }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -758,7 +762,9 @@ pub struct ParameterList {
 }
 impl ParameterList {
 	pub fn l_paren_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['(']) }
-	pub fn parameters(&self) -> AstNodeList<Pattern> { support::node_list(&self.syntax, 0usize) }
+	pub fn parameters(&self) -> AstSeparatedList<Pattern> {
+		support::separated_list(&self.syntax, 0usize)
+	}
 	pub fn r_paren_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![')']) }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -883,8 +889,8 @@ pub struct ConstructorParameters {
 }
 impl ConstructorParameters {
 	pub fn l_paren_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['(']) }
-	pub fn parameters(&self) -> AstNodeList<ConstructorParamOrPat> {
-		support::node_list(&self.syntax, 0usize)
+	pub fn parameters(&self) -> AstSeparatedList<ConstructorParamOrPat> {
+		support::separated_list(&self.syntax, 0usize)
 	}
 	pub fn r_paren_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![')']) }
 }
@@ -960,8 +966,8 @@ pub struct ObjectPattern {
 }
 impl ObjectPattern {
 	pub fn l_curly_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['{']) }
-	pub fn elements(&self) -> AstNodeList<ObjectPatternProp> {
-		support::node_list(&self.syntax, 0usize)
+	pub fn elements(&self) -> AstSeparatedList<ObjectPatternProp> {
+		support::separated_list(&self.syntax, 0usize)
 	}
 	pub fn r_curly_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['}']) }
 }
@@ -1072,7 +1078,9 @@ impl ExportNamed {
 	pub fn type_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![type]) }
 	pub fn from_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T![from]) }
 	pub fn l_curly_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['{']) }
-	pub fn specifiers(&self) -> AstNodeList<Specifier> { support::node_list(&self.syntax, 0usize) }
+	pub fn specifiers(&self) -> AstSeparatedList<Specifier> {
+		support::separated_list(&self.syntax, 0usize)
+	}
 	pub fn r_curly_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['}']) }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -1166,7 +1174,9 @@ pub struct NamedImports {
 }
 impl NamedImports {
 	pub fn l_curly_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['{']) }
-	pub fn specifiers(&self) -> AstNodeList<Specifier> { support::node_list(&self.syntax, 0usize) }
+	pub fn specifiers(&self) -> AstSeparatedList<Specifier> {
+		support::separated_list(&self.syntax, 0usize)
+	}
 	pub fn r_curly_token(&self) -> Option<SyntaxToken> { support::token(&self.syntax, T!['}']) }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
